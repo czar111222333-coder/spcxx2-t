@@ -241,4 +241,96 @@ export default function NewTradePage() {
       </form>
     </div>
   );
+  /* ----------- 数量快捷选择及显示优化 START ----------- */
+  // 注意：假设数量 state 为 qty, 累加方法为 addQty(n), 归零为 setQty(0)
+  const quickAddOptions = [1, 3, 5, 7, 10];
+
+  return (
+    <div className="space-y-6 pb-8">
+      {/* ...原表单头部和其他输入区域省略... */}
+
+      {/* 数量快捷区域 */}
+      <div className="bg-white rounded-2xl p-4 shadow">
+        <div className="flex justify-center gap-3">
+          {quickAddOptions.map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => addQty(n)}
+              className="bg-gray-100 rounded-lg px-4 py-2 font-bold text-lg border active:scale-95 transition"
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+
+        {/* 数量显示区域 */}
+        <div className="flex items-center justify-center mt-8 gap-6">
+          <button
+            type="button"
+            aria-label="减少"
+            onClick={() => addQty(-1)}
+            className="w-12 h-12 bg-white border rounded-full flex items-center justify-center text-3xl font-bold active:scale-95 transition select-none"
+          >
+            −
+          </button>
+          <div className="flex flex-col items-center min-w-[90px]">
+            <span
+              className="font-bold"
+              style={{ fontSize: 48, lineHeight: "1" }}
+            >
+              {qty}
+            </span>
+            <span
+              className="text-gray-500"
+              style={{ fontSize: 18, lineHeight: "1.15" }}
+            >
+              股
+            </span>
+          </div>
+          <button
+            type="button"
+            aria-label="增加"
+            onClick={() => addQty(1)}
+            className="w-12 h-12 bg-white border rounded-full flex items-center justify-center text-3xl font-bold active:scale-95 transition select-none"
+          >
+            +
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 mt-8">
+          <button
+            type="button"
+            onClick={() => setQty(0)}
+            className="bg-gray-700 text-white rounded-xl py-3 font-bold active:scale-95 transition"
+          >
+            清空数量
+          </button>
+          {/* 删除“重置为1股”按钮 */}
+        </div>
+      </div>
+
+      {/* 备注输入 */}
+      <textarea
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        className="w-full border rounded-xl p-4 text-base"
+        placeholder="备注，可不填"
+      />
+
+      {message && <p className="font-bold text-red-600">{message}</p>}
+
+      {/* 保存按钮放在底部 */}
+      <div className="mt-8">
+        <button
+          disabled={saving}
+          className={`w-full text-white px-6 py-5 rounded-2xl font-bold text-2xl shadow-lg active:scale-95 transition ${
+            saving ? "bg-gray-400" : "bg-green-600"
+          }`}
+        >
+          {saving ? "正在保存..." : "保存做T订单"}
+        </button>
+      </div>
+    </div>
+  );
 }
