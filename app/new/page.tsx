@@ -79,8 +79,6 @@ export default function NewTradePage() {
       return;
     }
 
-    alert("保存成功，已进入进行中订单");
-
     setPrice("");
     setQty(0);
     setNote("");
@@ -90,238 +88,129 @@ export default function NewTradePage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-8">
       <h2 className="text-3xl font-bold">新建做T</h2>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="bg-white rounded-2xl p-4 shadow space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <input
-              name="open_date"
-              type="date"
-              defaultValue={getToday()}
-              required
-              className="border rounded-xl p-3 text-base"
-            />
-
-            <input
-              name="open_time"
-              type="time"
-              defaultValue={getNowTime()}
-              required
-              className="border rounded-xl p-3 text-base"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => setDirection("买入开仓")}
-              className={`p-4 rounded-2xl font-bold text-xl border active:scale-95 transition ${
-                direction === "买入开仓"
-                  ? "bg-green-600 text-white border-green-600"
-                  : "bg-white text-green-600 border-green-600"
-              }`}
-            >
-              买入开仓
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setDirection("卖出开仓")}
-              className={`p-4 rounded-2xl font-bold text-xl border active:scale-95 transition ${
-                direction === "卖出开仓"
-                  ? "bg-red-600 text-white border-red-600"
-                  : "bg-white text-red-600 border-red-600"
-              }`}
-            >
-              卖出开仓
-            </button>
-          </div>
-
-          <div className="bg-gray-100 rounded-2xl p-4">
-            <p className="text-gray-500 mb-2">开仓价格</p>
-
-            <input
-              autoFocus
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              inputMode="decimal"
-              type="number"
-              step="0.00000001"
-              required
-              className="w-full bg-white border rounded-xl p-4 text-5xl font-bold text-blue-700 text-center"
-              placeholder="0.00"
-            />
-          </div>
-
-          <div className="bg-gray-100 rounded-2xl p-4">
-            <p className="text-gray-500 mb-3">快捷数量：点击会累加</p>
-
-            <div className="grid grid-cols-5 gap-2 mb-4">
-              {quickQty.map((num) => (
-                <button
-                  key={num}
-                  type="button"
-                  onClick={() => addQty(num)}
-                  className="bg-white border rounded-xl py-4 text-2xl font-bold active:scale-95 transition"
-                >
-                  +{num}
-                </button>
-              ))}
-            </div>
-
-            <p className="text-gray-500 mb-2">当前开仓数量</p>
-
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={minusQty}
-                className="w-16 h-16 bg-white rounded-xl text-3xl font-bold border active:scale-95 transition"
-              >
-                -
-              </button>
-
-              <input
-                type="number"
-                inputMode="numeric"
-                value={qty}
-                onChange={(e) => setQty(Math.max(0, Number(e.target.value)))}
-                className="flex-1 bg-white border rounded-xl p-4 text-center text-5xl font-bold"
-              />
-
-              <button
-                type="button"
-                onClick={() => addQty(1)}
-                className="w-16 h-16 bg-white rounded-xl text-3xl font-bold border active:scale-95 transition"
-              >
-                +
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 mt-3">
-              <button
-                type="button"
-                onClick={() => setQty(0)}
-                className="bg-gray-700 text-white rounded-xl py-3 font-bold active:scale-95 transition"
-              >
-                清空数量
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setQty(1)}
-                className="bg-blue-600 text-white rounded-xl py-3 font-bold active:scale-95 transition"
-              >
-                重置为 1 股
-              </button>
-            </div>
-          </div>
-
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            className="w-full border rounded-xl p-4 text-base"
-            placeholder="备注，可不填"
+      <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-4 shadow space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            name="open_date"
+            type="date"
+            defaultValue={getToday()}
+            required
+            className="border rounded-xl p-3 text-base"
           />
 
-          {message && <p className="font-bold text-red-600">{message}</p>}
+          <input
+            name="open_time"
+            type="time"
+            defaultValue={getNowTime()}
+            required
+            className="border rounded-xl p-3 text-base"
+          />
         </div>
 
-        <div className="sticky bottom-24 z-30">
+        <div className="grid grid-cols-2 gap-3">
           <button
-            disabled={saving}
-            className={`w-full text-white px-6 py-5 rounded-2xl font-bold text-2xl shadow-lg active:scale-95 transition ${
-              saving ? "bg-gray-400" : "bg-green-600"
+            type="button"
+            onClick={() => setDirection("买入开仓")}
+            className={`py-5 rounded-2xl font-bold text-xl border active:scale-95 transition ${
+              direction === "买入开仓"
+                ? "bg-green-600 text-white border-green-600"
+                : "bg-white text-green-600 border-green-600"
             }`}
           >
-            {saving ? "正在保存..." : "保存做T订单"}
+            买入开仓
           </button>
-        </div>
-      </form>
-    </div>
-  );
-  /* ----------- 数量快捷选择及显示优化 START ----------- */
-  // 注意：假设数量 state 为 qty, 累加方法为 addQty(n), 归零为 setQty(0)
-  const quickAddOptions = [1, 3, 5, 7, 10];
 
-  return (
-    <div className="space-y-6 pb-8">
-      {/* ...原表单头部和其他输入区域省略... */}
-
-      {/* 数量快捷区域 */}
-      <div className="bg-white rounded-2xl p-4 shadow">
-        <div className="flex justify-center gap-3">
-          {quickAddOptions.map((n) => (
-            <button
-              key={n}
-              type="button"
-              onClick={() => addQty(n)}
-              className="bg-gray-100 rounded-lg px-4 py-2 font-bold text-lg border active:scale-95 transition"
-            >
-              {n}
-            </button>
-          ))}
-        </div>
-
-        {/* 数量显示区域 */}
-        <div className="flex items-center justify-center mt-8 gap-6">
           <button
             type="button"
-            aria-label="减少"
-            onClick={() => addQty(-1)}
-            className="w-12 h-12 bg-white border rounded-full flex items-center justify-center text-3xl font-bold active:scale-95 transition select-none"
+            onClick={() => setDirection("卖出开仓")}
+            className={`py-5 rounded-2xl font-bold text-xl border active:scale-95 transition ${
+              direction === "卖出开仓"
+                ? "bg-red-600 text-white border-red-600"
+                : "bg-white text-red-600 border-red-600"
+            }`}
           >
-            −
+            卖出开仓
           </button>
-          <div className="flex flex-col items-center min-w-[90px]">
-            <span
-              className="font-bold"
-              style={{ fontSize: 48, lineHeight: "1" }}
-            >
-              {qty}
-            </span>
-            <span
-              className="text-gray-500"
-              style={{ fontSize: 18, lineHeight: "1.15" }}
-            >
-              股
-            </span>
+        </div>
+
+        <div className="bg-gray-100 rounded-2xl p-4">
+          <p className="text-gray-500 mb-2">开仓价格</p>
+
+          <input
+            autoFocus
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            inputMode="decimal"
+            type="number"
+            step="0.00000001"
+            required
+            className="w-full bg-white border rounded-xl p-4 text-5xl font-bold text-blue-700 text-center"
+            placeholder="0.00"
+          />
+        </div>
+
+        <div className="bg-gray-100 rounded-2xl p-4">
+          <p className="text-gray-500 mb-3">快捷数量：点击会累加</p>
+
+          <div className="grid grid-cols-5 gap-2 mb-4">
+            {quickQty.map((num) => (
+              <button
+                key={num}
+                type="button"
+                onClick={() => addQty(num)}
+                className="bg-white border rounded-xl py-4 text-2xl font-bold active:scale-95 transition"
+              >
+                {num}
+              </button>
+            ))}
           </div>
-          <button
-            type="button"
-            aria-label="增加"
-            onClick={() => addQty(1)}
-            className="w-12 h-12 bg-white border rounded-full flex items-center justify-center text-3xl font-bold active:scale-95 transition select-none"
-          >
-            +
-          </button>
-        </div>
 
-        <div className="grid grid-cols-2 gap-3 mt-8">
+          <p className="text-gray-500 mb-2">当前开仓数量</p>
+
+          <div className="flex items-center justify-center gap-4">
+            <button
+              type="button"
+              onClick={minusQty}
+              className="w-16 h-16 bg-white rounded-xl text-3xl font-bold border active:scale-95 transition"
+            >
+              -
+            </button>
+
+            <div className="w-40 bg-white border rounded-xl p-4 text-center">
+              <span className="text-5xl font-bold">{qty}</span>
+              <span className="text-xl font-bold ml-1">股</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => addQty(1)}
+              className="w-16 h-16 bg-white rounded-xl text-3xl font-bold border active:scale-95 transition"
+            >
+              +
+            </button>
+          </div>
+
           <button
             type="button"
             onClick={() => setQty(0)}
-            className="bg-gray-700 text-white rounded-xl py-3 font-bold active:scale-95 transition"
+            className="w-full bg-gray-700 text-white rounded-xl py-3 font-bold mt-4 active:scale-95 transition"
           >
             清空数量
           </button>
-          {/* 删除“重置为1股”按钮 */}
         </div>
-      </div>
 
-      {/* 备注输入 */}
-      <textarea
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        className="w-full border rounded-xl p-4 text-base"
-        placeholder="备注，可不填"
-      />
+        <textarea
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          className="w-full border rounded-xl p-4 text-base"
+          placeholder="备注，可不填"
+        />
 
-      {message && <p className="font-bold text-red-600">{message}</p>}
+        {message && <p className="font-bold text-red-600">{message}</p>}
 
-      {/* 保存按钮放在底部 */}
-      <div className="mt-8">
         <button
           disabled={saving}
           className={`w-full text-white px-6 py-5 rounded-2xl font-bold text-2xl shadow-lg active:scale-95 transition ${
@@ -330,7 +219,7 @@ export default function NewTradePage() {
         >
           {saving ? "正在保存..." : "保存做T订单"}
         </button>
-      </div>
+      </form>
     </div>
   );
 }
