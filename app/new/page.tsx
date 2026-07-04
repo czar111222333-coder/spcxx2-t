@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 function getToday() {
@@ -12,19 +13,27 @@ function getNowTime() {
 }
 
 export default function NewTradePage() {
-  const quickQty = [1, 2, 3, 5, 10, 20, 30, 50, 100];
+  const router = useRouter();
+
+  const quickQty = [1, 3, 5, 7, 10];
 
   const [direction, setDirection] = useState("买入开仓");
-  const [qty, setQty] = useState(1);
+  const [qty, setQty] = useState(0);
   const [price, setPrice] = useState("");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
-  const [success, setSuccess] = useState<any>(null);
   const [message, setMessage] = useState("");
+
+  function addQty(num: number) {
+    setQty((old) => old + num);
+  }
+
+  function minusQty() {
+    setQty((old) => Math.max(0, old - 1));
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     if (saving) return;
 
     const openPrice = Number(price);
@@ -34,8 +43,13 @@ export default function NewTradePage() {
       return;
     }
 
+    if (!qty || qty <= 0) {
+      setMessage("请选择开仓数量");
+      return;
+    }
+
     const ok = window.confirm(
-      `确认挂单？\n\n方向：${direction}\n价格：${openPrice}\n数量：${qty} 股`
+      `确认保存？\n\n方向：${direction}\n价格：${openPrice}\n数量：${qty} 股`
     );
 
     if (!ok) return;
@@ -65,62 +79,29 @@ export default function NewTradePage() {
       return;
     }
 
-    setSuccess({
-      direction,
-      price: openPrice,
-      qty,
-    });
+    alert("保存成功，已进入进行中订单");
 
     setPrice("");
-    setQty(1);
+    setQty(0);
     setNote("");
     setSaving(false);
 
-    setTimeout(() => {
-      setSuccess(null);
-    }, 3000);
+    router.push("/active");
   }
 
   return (
-    <div>
-      <h2 className="text-3xl font-bold mb-8">新建做T</h2>
+    <div className="space-y-4">
+      <h2 className="text-3xl font-bold">新建做T</h2>
 
-      {success && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50">
-          <div className="bg-white rounded-2xl shadow-xl p-8 w-96 text-center">
-            <p className="text-5xl mb-4">✅</p>
-            <h3 className="text-2xl font-bold mb-4">挂单成功</h3>
-
-            <div className="bg-gray-100 rounded-xl p-4 text-left space-y-2">
-              <p>
-                方向：
-                <span
-                  className={
-                    success.direction === "买入开仓"
-                      ? "text-green-600 font-bold"
-                      : "text-red-600 font-bold"
-                  }
-                >
-                  {success.direction}
-                </span>
-              </p>
-              <p>价格：${Number(success.price).toFixed(2)}</p>
-              <p>数量：{success.qty} 股</p>
-              <p className="text-gray-500">已进入进行中订单</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl p-6 shadow max-w-xl">
-        <div className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="bg-white rounded-2xl p-4 shadow space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <input
               name="open_date"
               type="date"
               defaultValue={getToday()}
               required
-              className="border rounded-lg p-3"
+              className="border rounded-xl p-3 text-base"
             />
 
             <input
@@ -128,17 +109,17 @@ export default function NewTradePage() {
               type="time"
               defaultValue={getNowTime()}
               required
-              className="border rounded-lg p-3"
+              className="border rounded-xl p-3 text-base"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
               onClick={() => setDirection("买入开仓")}
-              className={`p-5 rounded-xl font-bold border text-xl ${
+              className={`p-4 rounded-2xl font-bold text-xl border active:scale-95 transition ${
                 direction === "买入开仓"
-                  ? "bg-green-600 text-white"
+                  ? "bg-green-600 text-white border-green-600"
                   : "bg-white text-green-600 border-green-600"
               }`}
             >
@@ -148,9 +129,9 @@ export default function NewTradePage() {
             <button
               type="button"
               onClick={() => setDirection("卖出开仓")}
-              className={`p-5 rounded-xl font-bold border text-xl ${
+              className={`p-4 rounded-2xl font-bold text-xl border active:scale-95 transition ${
                 direction === "卖出开仓"
-                  ? "bg-red-600 text-white"
+                  ? "bg-red-600 text-white border-red-600"
                   : "bg-white text-red-600 border-red-600"
               }`}
             >
@@ -158,35 +139,34 @@ export default function NewTradePage() {
             </button>
           </div>
 
-          <div className="bg-gray-100 rounded-xl p-5">
+          <div className="bg-gray-100 rounded-2xl p-4">
             <p className="text-gray-500 mb-2">开仓价格</p>
+
             <input
+              autoFocus
               value={price}
               onChange={(e) => setPrice(e.target.value)}
+              inputMode="decimal"
               type="number"
               step="0.00000001"
               required
-              className="w-full bg-white border rounded-lg p-4 text-4xl font-bold text-blue-700"
+              className="w-full bg-white border rounded-xl p-4 text-5xl font-bold text-blue-700 text-center"
               placeholder="0.00"
             />
           </div>
 
-          <div className="bg-gray-100 rounded-xl p-5">
-            <p className="text-gray-500 mb-3">快捷数量</p>
+          <div className="bg-gray-100 rounded-2xl p-4">
+            <p className="text-gray-500 mb-3">快捷数量：点击会累加</p>
 
-            <div className="grid grid-cols-5 gap-3 mb-5">
+            <div className="grid grid-cols-5 gap-2 mb-4">
               {quickQty.map((num) => (
                 <button
                   key={num}
                   type="button"
-                  onClick={() => setQty(num)}
-                  className={`py-3 rounded-lg font-bold border ${
-                    qty === num
-                      ? "bg-blue-600 text-white"
-                      : "bg-white text-gray-700"
-                  }`}
+                  onClick={() => addQty(num)}
+                  className="bg-white border rounded-xl py-4 text-2xl font-bold active:scale-95 transition"
                 >
-                  {num}
+                  +{num}
                 </button>
               ))}
             </div>
@@ -196,25 +176,44 @@ export default function NewTradePage() {
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={() => setQty(Math.max(1, qty - 1))}
-                className="w-16 h-16 bg-white rounded-lg text-3xl font-bold border"
+                onClick={minusQty}
+                className="w-16 h-16 bg-white rounded-xl text-3xl font-bold border active:scale-95 transition"
               >
                 -
               </button>
 
               <input
                 type="number"
+                inputMode="numeric"
                 value={qty}
-                onChange={(e) => setQty(Math.max(1, Number(e.target.value)))}
-                className="flex-1 bg-white border rounded-lg p-4 text-center text-4xl font-bold"
+                onChange={(e) => setQty(Math.max(0, Number(e.target.value)))}
+                className="flex-1 bg-white border rounded-xl p-4 text-center text-5xl font-bold"
               />
 
               <button
                 type="button"
-                onClick={() => setQty(qty + 1)}
-                className="w-16 h-16 bg-white rounded-lg text-3xl font-bold border"
+                onClick={() => addQty(1)}
+                className="w-16 h-16 bg-white rounded-xl text-3xl font-bold border active:scale-95 transition"
               >
                 +
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mt-3">
+              <button
+                type="button"
+                onClick={() => setQty(0)}
+                className="bg-gray-700 text-white rounded-xl py-3 font-bold active:scale-95 transition"
+              >
+                清空数量
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setQty(1)}
+                className="bg-blue-600 text-white rounded-xl py-3 font-bold active:scale-95 transition"
+              >
+                重置为 1 股
               </button>
             </div>
           </div>
@@ -222,20 +221,22 @@ export default function NewTradePage() {
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            className="w-full border rounded-lg p-3"
-            placeholder="备注"
+            className="w-full border rounded-xl p-4 text-base"
+            placeholder="备注，可不填"
           />
 
+          {message && <p className="font-bold text-red-600">{message}</p>}
+        </div>
+
+        <div className="sticky bottom-24 z-30">
           <button
             disabled={saving}
-            className={`w-full text-white px-6 py-4 rounded-lg font-bold text-xl ${
+            className={`w-full text-white px-6 py-5 rounded-2xl font-bold text-2xl shadow-lg active:scale-95 transition ${
               saving ? "bg-gray-400" : "bg-green-600"
             }`}
           >
             {saving ? "正在保存..." : "保存做T订单"}
           </button>
-
-          {message && <p className="font-bold text-red-600">{message}</p>}
         </div>
       </form>
     </div>
