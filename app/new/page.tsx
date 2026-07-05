@@ -87,15 +87,15 @@ export default function NewTradePage() {
     <PageContainer>
       <PageTitle title="新建做T" subtitle="记录一笔新的开仓订单" />
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit}>
         <Card className="space-y-5">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-[1.35fr_0.65fr] gap-3">
             <input
               name="open_date"
               type="date"
               defaultValue={getToday()}
               required
-              className="w-full rounded-xl border border-gray-300 bg-white p-4 text-base font-bold text-gray-950"
+              className="h-14 w-full rounded-xl border border-gray-300 bg-white px-4 text-lg font-extrabold text-gray-950"
             />
 
             <input
@@ -103,7 +103,7 @@ export default function NewTradePage() {
               type="time"
               defaultValue={getNowTime()}
               required
-              className="w-full rounded-xl border border-gray-300 bg-white p-4 text-base font-bold text-gray-950"
+              className="h-14 w-full rounded-xl border border-gray-300 bg-white px-3 text-lg font-extrabold text-gray-950"
             />
           </div>
 
@@ -144,7 +144,7 @@ export default function NewTradePage() {
               type="number"
               step="0.00000001"
               required
-              className="w-full rounded-xl border border-gray-300 bg-white p-4 text-center text-4xl font-extrabold leading-tight text-blue-700"
+              className="h-24 w-full rounded-xl border border-gray-300 bg-white px-4 text-center text-4xl font-extrabold leading-tight text-blue-700"
               placeholder="0.00"
             />
           </div>
