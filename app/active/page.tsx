@@ -7,6 +7,8 @@ import PageTitle from "@/components/PageTitle";
 import EmptyState from "@/components/EmptyState";
 import ActiveTradeCard from "@/components/active/ActiveTradeCard";
 
+const FEE_RATE = 0.001;
+
 export default function ActivePage() {
   const [trades, setTrades] = useState<any[]>([]);
   const [openId, setOpenId] = useState<number | null>(null);
@@ -44,7 +46,6 @@ export default function ActivePage() {
     trade: any
   ) {
     event.preventDefault();
-
     if (savingId) return;
 
     const form = new FormData(event.currentTarget);
@@ -53,6 +54,7 @@ export default function ActivePage() {
     const close_price = Number(form.get("close_price"));
     const qty = Number(getQtyValue(trade));
     const remainingQty = Number(trade.remaining_qty || 0);
+    const openPrice = Number(trade.open_price || 0);
 
     if (!close_price || close_price <= 0) {
       setMessage("请输入正确的完成价格");
@@ -71,20 +73,24 @@ export default function ActivePage() {
 
     const actionText = trade.direction === "买入开仓" ? "卖出" : "买入";
 
+    const openFeePart = openPrice * qty * FEE_RATE;
+    const closeFee = close_price * qty * FEE_RATE;
+    const totalFee = openFeePart + closeFee;
+
+    const profit =
+      trade.direction === "买入开仓"
+        ? (close_price - openPrice) * qty - totalFee
+        : (openPrice - close_price) * qty - totalFee;
+
     const ok = window.confirm(
-      `确认${actionText}完成？\n\nT${trade.id}\n价格：${close_price}\n数量：${qty} 股`
+      `确认${actionText}完成？\n\nT${trade.id}\n价格：${close_price}\n数量：${qty} 股\n本次手续费：$${totalFee.toFixed(
+        2
+      )}`
     );
 
     if (!ok) return;
 
     setSavingId(trade.id);
-
-    const fee = (Number(trade.open_price) * qty + close_price * qty) * 0.001;
-
-    const profit =
-      trade.direction === "买入开仓"
-        ? (close_price - Number(trade.open_price)) * qty - fee
-        : (Number(trade.open_price) - close_price) * qty - fee;
 
     const { data: newExecution, error: insertError } = await supabase
       .from("executions")
@@ -94,7 +100,8 @@ export default function ActivePage() {
         close_time,
         close_price,
         qty,
-        fee,
+        close_fee: closeFee,
+        fee: totalFee,
         profit,
       })
       .select()
@@ -189,7 +196,9 @@ export default function ActivePage() {
           ...item,
           remaining_qty: restoredQty,
           status: "进行中",
-          executions: item.executions.filter((ex: any) => ex.id !== execution.id),
+          executions: item.executions.filter(
+            (ex: any) => ex.id !== execution.id
+          ),
         };
       })
     );

@@ -61,10 +61,13 @@ export default function CompletedPage() {
             0
           );
 
-          const totalFee = trade.executions.reduce(
-            (sum: number, item: any) => sum + Number(item.fee || 0),
+          const closeFee = trade.executions.reduce(
+            (sum: number, item: any) => sum + Number(item.close_fee || 0),
             0
           );
+
+          const openFee = Number(trade.open_fee || 0);
+          const totalFee = openFee + closeFee;
 
           const totalAmount =
             Number(trade.open_price || 0) * Number(trade.total_qty || 0);
@@ -157,7 +160,8 @@ export default function CompletedPage() {
                         </p>
 
                         <p className="mt-1 text-sm font-bold text-gray-600">
-                          手续费 ${Number(item.fee || 0).toFixed(2)}
+                          平仓手续费 $
+                          {Number(item.close_fee || 0).toFixed(2)}
                         </p>
                       </div>
                     ))}

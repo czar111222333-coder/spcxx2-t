@@ -9,6 +9,8 @@ import Card from "@/components/Card";
 import PrimaryButton from "@/components/PrimaryButton";
 import QtySelector from "@/components/QtySelector";
 
+const FEE_RATE = 0.001;
+
 function getToday() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -46,8 +48,12 @@ export default function NewTradePage() {
       return;
     }
 
+    const openFee = openPrice * qty * FEE_RATE;
+
     const ok = window.confirm(
-      `确认保存？\n\n方向：${direction}\n时间：${openDate} ${openTime}\n价格：${openPrice}\n数量：${qty} 股`
+      `确认保存？\n\n方向：${direction}\n时间：${openDate} ${openTime}\n价格：${openPrice}\n数量：${qty} 股\n开仓手续费：$${openFee.toFixed(
+        2
+      )}`
     );
 
     if (!ok) return;
@@ -62,6 +68,7 @@ export default function NewTradePage() {
       open_price: openPrice,
       total_qty: qty,
       remaining_qty: qty,
+      open_fee: openFee,
       note,
       status: "进行中",
     });

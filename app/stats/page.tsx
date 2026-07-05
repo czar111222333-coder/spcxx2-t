@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
 import { supabase } from "@/lib/supabase";
 import PageContainer from "@/components/PageContainer";
 import PageTitle from "@/components/PageTitle";
@@ -25,11 +26,14 @@ export default async function StatsPage() {
   const today = new Date().toISOString().slice(0, 10);
   const month = today.slice(0, 7);
 
+  const { data: trades } = await supabase.from("trades").select("*");
+
   const { data: executions } = await supabase
     .from("executions")
     .select("*")
     .order("close_date", { ascending: false });
 
+  const tradeList = trades || [];
   const list = executions || [];
 
   const todayList = list.filter((item) => item.close_date === today);
@@ -50,15 +54,28 @@ export default async function StatsPage() {
     0
   );
 
-  const todayFee = todayList.reduce(
-    (sum, item) => sum + Number(item.fee || 0),
+  const todayOpenFee = tradeList
+    .filter((item) => item.open_date === today)
+    .reduce((sum, item) => sum + Number(item.open_fee || 0), 0);
+
+  const todayCloseFee = todayList.reduce(
+    (sum, item) => sum + Number(item.close_fee || 0),
     0
   );
 
-  const totalFee = list.reduce(
-    (sum, item) => sum + Number(item.fee || 0),
+  const todayFee = todayOpenFee + todayCloseFee;
+
+  const totalOpenFee = tradeList.reduce(
+    (sum, item) => sum + Number(item.open_fee || 0),
     0
   );
+
+  const totalCloseFee = list.reduce(
+    (sum, item) => sum + Number(item.close_fee || 0),
+    0
+  );
+
+  const totalFee = totalOpenFee + totalCloseFee;
 
   const winCount = list.filter((item) => Number(item.profit || 0) > 0).length;
   const lossCount = list.filter((item) => Number(item.profit || 0) < 0).length;
@@ -72,7 +89,7 @@ export default async function StatsPage() {
     <PageContainer>
       <PageTitle title="盈亏统计" />
 
-      {totalCount === 0 ? (
+      {tradeList.length === 0 && totalCount === 0 ? (
         <EmptyState text="暂无统计数据" />
       ) : (
         <div className="space-y-5">
@@ -163,6 +180,20 @@ export default async function StatsPage() {
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-500">今日开仓手续费</span>
+                <span className="font-bold text-gray-900">
+                  {usd(todayOpenFee)}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-500">今日平仓手续费</span>
+                <span className="font-bold text-gray-900">
+                  {usd(todayCloseFee)}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between border-t pt-3">
                 <span className="text-sm text-gray-500">今日手续费</span>
                 <span className="font-bold text-gray-900">{usd(todayFee)}</span>
               </div>

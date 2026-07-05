@@ -28,15 +28,18 @@ export default function ActiveTradeCard({
   onCancel,
   onUndo,
 }: Props) {
-  const profit = (trade.executions || []).reduce(
+  const executionProfit = (trade.executions || []).reduce(
     (sum: number, item: any) => sum + Number(item.profit || 0),
     0
   );
 
-  const fee = (trade.executions || []).reduce(
-    (sum: number, item: any) => sum + Number(item.fee || 0),
+  const closeFee = (trade.executions || []).reduce(
+    (sum: number, item: any) => sum + Number(item.close_fee || 0),
     0
   );
+
+  const openFee = Number(trade.open_fee || 0);
+  const totalFee = openFee + closeFee;
 
   return (
     <Card>
@@ -44,8 +47,8 @@ export default function ActiveTradeCard({
         <ActiveTradeSummary
           trade={trade}
           isOpen={isOpen}
-          profit={profit}
-          fee={fee}
+          profit={executionProfit}
+          fee={totalFee}
         />
       </button>
 
