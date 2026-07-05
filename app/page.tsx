@@ -1,9 +1,19 @@
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import PageContainer from "@/components/PageContainer";
+import PageTitle from "@/components/PageTitle";
+import Card from "@/components/Card";
+import EmptyState from "@/components/EmptyState";
 
 function money(value: number) {
   const sign = value >= 0 ? "+" : "-";
   return `${sign}$${Math.abs(value).toFixed(2)}`;
+}
+
+function profitColor(value: number) {
+  if (value > 0) return "text-green-600";
+  if (value < 0) return "text-red-600";
+  return "text-gray-900";
 }
 
 export default async function Home() {
@@ -28,38 +38,38 @@ export default async function Home() {
   );
 
   const todayProfit = todayExecutions.reduce(
-    (sum, item) => sum + Number(item.profit),
+    (sum, item) => sum + Number(item.profit || 0),
     0
   );
 
   const monthProfit = monthExecutions.reduce(
-    (sum, item) => sum + Number(item.profit),
+    (sum, item) => sum + Number(item.profit || 0),
     0
   );
 
   const totalProfit = executionList.reduce(
-    (sum, item) => sum + Number(item.profit),
+    (sum, item) => sum + Number(item.profit || 0),
     0
   );
 
   const todayFee = todayExecutions.reduce(
-    (sum, item) => sum + Number(item.fee),
+    (sum, item) => sum + Number(item.fee || 0),
     0
   );
 
   const totalFee = executionList.reduce(
-    (sum, item) => sum + Number(item.fee),
+    (sum, item) => sum + Number(item.fee || 0),
     0
   );
 
   const activeQty = activeTrades.reduce(
-    (sum, item) => sum + Number(item.remaining_qty),
+    (sum, item) => sum + Number(item.remaining_qty || 0),
     0
   );
 
   const executionCount = executionList.length;
   const winCount = executionList.filter(
-    (item) => Number(item.profit) > 0
+    (item) => Number(item.profit || 0) > 0
   ).length;
 
   const winRate =
@@ -72,174 +82,159 @@ export default async function Home() {
     .slice(0, 5);
 
   return (
-    <div className="space-y-5">
-      <section>
-        <h2 className="text-3xl font-bold leading-tight">SPCXX 做T控制台</h2>
-        <p className="text-gray-500 mt-1 text-sm">
-          今日收益、进行中订单和最近成交
-        </p>
-      </section>
+    <PageContainer>
+      <PageTitle title="SPCXX 做T控制台" />
 
-      <section className="bg-white rounded-2xl p-5 shadow">
-        <p className="text-gray-500">今日净利润</p>
-        <p
-          className={`text-5xl font-bold mt-2 leading-tight break-all ${
-            todayProfit >= 0 ? "text-green-600" : "text-red-600"
-          }`}
-        >
-          {money(todayProfit)}
-        </p>
-
-        <div className="grid grid-cols-2 gap-3 mt-5">
-          <Link
-            href="/new"
-            className="bg-green-600 text-white rounded-xl p-4 text-center font-bold text-lg active:scale-95 transition"
-          >
-            ➕ 新建做T
-          </Link>
-
-          <Link
-            href="/active"
-            className="bg-orange-500 text-white rounded-xl p-4 text-center font-bold text-lg active:scale-95 transition"
-          >
-            ⏳ 进行中
-          </Link>
-        </div>
-      </section>
-
-      <section className="grid grid-cols-2 gap-3">
-        <div className="bg-white rounded-2xl p-4 shadow overflow-hidden">
-          <p className="text-gray-500 text-sm">本月净利润</p>
-          <p
-            className={`text-3xl font-bold mt-2 leading-tight break-all ${
-              monthProfit >= 0 ? "text-green-600" : "text-red-600"
-            }`}
-          >
-            {money(monthProfit)}
+      <div className="space-y-5">
+        <Card>
+          <p className="text-sm text-gray-500">今日净利润</p>
+          <p className={`mt-2 text-4xl font-bold ${profitColor(todayProfit)}`}>
+            {money(todayProfit)}
           </p>
+
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <Link
+              href="/new"
+              className="rounded-xl bg-green-600 p-4 text-center text-lg font-bold text-white active:scale-95"
+            >
+              ➕ 新建做T
+            </Link>
+
+            <Link
+              href="/active"
+              className="rounded-xl bg-orange-500 p-4 text-center text-lg font-bold text-white active:scale-95"
+            >
+              ⏳ 进行中
+            </Link>
+          </div>
+        </Card>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Card>
+            <p className="text-sm text-gray-500">本月净利润</p>
+            <p className={`mt-2 text-2xl font-bold ${profitColor(monthProfit)}`}>
+              {money(monthProfit)}
+            </p>
+          </Card>
+
+          <Card>
+            <p className="text-sm text-gray-500">累计净利润</p>
+            <p className={`mt-2 text-2xl font-bold ${profitColor(totalProfit)}`}>
+              {money(totalProfit)}
+            </p>
+          </Card>
+
+          <Card>
+            <p className="text-sm text-gray-500">进行中订单</p>
+            <p className="mt-2 text-2xl font-bold">{activeTrades.length}</p>
+          </Card>
+
+          <Card>
+            <p className="text-sm text-gray-500">待完成股数</p>
+            <p className="mt-2 text-2xl font-bold text-red-600">{activeQty}</p>
+          </Card>
+
+          <Card>
+            <p className="text-sm text-gray-500">已完成订单</p>
+            <p className="mt-2 text-2xl font-bold">{completedTrades.length}</p>
+          </Card>
+
+          <Card>
+            <p className="text-sm text-gray-500">成功率</p>
+            <p className="mt-2 text-2xl font-bold">{winRate.toFixed(1)}%</p>
+          </Card>
         </div>
 
-        <div className="bg-white rounded-2xl p-4 shadow overflow-hidden">
-          <p className="text-gray-500 text-sm">累计净利润</p>
-          <p
-            className={`text-3xl font-bold mt-2 leading-tight break-all ${
-              totalProfit >= 0 ? "text-green-600" : "text-red-600"
-            }`}
-          >
-            {money(totalProfit)}
-          </p>
-        </div>
+        <Card>
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-bold">进行中订单</h3>
+            <Link href="/active" className="font-bold text-blue-600">
+              查看全部
+            </Link>
+          </div>
 
-        <div className="bg-white rounded-2xl p-4 shadow">
-          <p className="text-gray-500 text-sm">进行中订单</p>
-          <p className="text-3xl font-bold mt-2">{activeTrades.length}</p>
-        </div>
+          {recentActive.length === 0 ? (
+            <EmptyState text="暂无进行中订单" />
+          ) : (
+            <div className="space-y-3">
+              {recentActive.map((trade) => (
+                <div key={trade.id} className="rounded-xl bg-gray-50 p-4">
+                  <div className="flex justify-between gap-3">
+                    <div>
+                      <p className="text-sm text-gray-500">T{trade.id}</p>
+                      <p className="font-bold">
+                        {trade.direction} ｜ $
+                        {Number(trade.open_price || 0).toFixed(2)}
+                      </p>
+                    </div>
 
-        <div className="bg-white rounded-2xl p-4 shadow">
-          <p className="text-gray-500 text-sm">剩余待完成股数</p>
-          <p className="text-3xl font-bold mt-2 text-red-600">{activeQty}</p>
-        </div>
-
-        <div className="bg-white rounded-2xl p-4 shadow">
-          <p className="text-gray-500 text-sm">已完成订单</p>
-          <p className="text-3xl font-bold mt-2">{completedTrades.length}</p>
-        </div>
-
-        <div className="bg-white rounded-2xl p-4 shadow">
-          <p className="text-gray-500 text-sm">成功率</p>
-          <p className="text-3xl font-bold mt-2">{winRate.toFixed(1)}%</p>
-        </div>
-      </section>
-
-      <section className="bg-white rounded-2xl p-5 shadow">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold">进行中订单</h3>
-          <Link href="/active" className="text-blue-600 font-bold">
-            查看全部
-          </Link>
-        </div>
-
-        <div className="space-y-3">
-          {recentActive.map((trade) => (
-            <div key={trade.id} className="bg-gray-50 rounded-xl p-4">
-              <div className="flex justify-between">
-                <div>
-                  <p className="text-gray-500 text-sm">T{trade.id}</p>
-                  <p className="font-bold">
-                    {trade.direction} ｜ ${Number(trade.open_price).toFixed(2)}
-                  </p>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-500">剩余</p>
+                      <p className="font-bold text-red-600">
+                        {trade.remaining_qty} 股
+                      </p>
+                    </div>
+                  </div>
                 </div>
-
-                <div className="text-right">
-                  <p className="text-gray-500 text-sm">剩余</p>
-                  <p className="font-bold text-red-600">
-                    {trade.remaining_qty} 股
-                  </p>
-                </div>
-              </div>
+              ))}
             </div>
-          ))}
-
-          {recentActive.length === 0 && (
-            <p className="text-gray-500 text-center py-4">暂无进行中订单</p>
           )}
-        </div>
-      </section>
+        </Card>
 
-      <section className="bg-white rounded-2xl p-5 shadow">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold">最近成交</h3>
-          <Link href="/completed" className="text-blue-600 font-bold">
-            查看已完成
-          </Link>
-        </div>
+        <Card>
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-bold">最近成交</h3>
+            <Link href="/completed" className="font-bold text-blue-600">
+              查看已完成
+            </Link>
+          </div>
 
-        <div className="space-y-3">
-          {recentExecutions.map((item) => (
-            <div key={item.id} className="bg-gray-50 rounded-xl p-4">
-              <div className="flex justify-between gap-3">
-                <div>
-                  <p className="text-gray-500 text-sm">
-                    {item.close_date} {item.close_time || ""}
-                  </p>
-                  <p className="font-bold">
-                    成交 ${Number(item.close_price).toFixed(2)} × {item.qty} 股
-                  </p>
-                  <p className="text-gray-500 text-sm">
-                    手续费 ${Number(item.fee).toFixed(2)}
-                  </p>
+          {recentExecutions.length === 0 ? (
+            <EmptyState text="暂无成交记录" />
+          ) : (
+            <div className="space-y-3">
+              {recentExecutions.map((item) => (
+                <div key={item.id} className="rounded-xl bg-gray-50 p-4">
+                  <div className="flex justify-between gap-3">
+                    <div>
+                      <p className="text-sm text-gray-500">
+                        {item.close_date} {item.close_time || ""}
+                      </p>
+                      <p className="font-bold">
+                        成交 ${Number(item.close_price || 0).toFixed(2)} ×{" "}
+                        {item.qty} 股
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        手续费 ${Number(item.fee || 0).toFixed(2)}
+                      </p>
+                    </div>
+
+                    <p
+                      className={`text-right text-xl font-bold ${profitColor(
+                        Number(item.profit || 0)
+                      )}`}
+                    >
+                      {money(Number(item.profit || 0))}
+                    </p>
+                  </div>
                 </div>
-
-                <p
-                  className={`text-xl font-bold text-right ${
-                    Number(item.profit) >= 0
-                      ? "text-green-600"
-                      : "text-red-600"
-                  }`}
-                >
-                  {money(Number(item.profit))}
-                </p>
-              </div>
+              ))}
             </div>
-          ))}
-
-          {recentExecutions.length === 0 && (
-            <p className="text-gray-500 text-center py-4">暂无成交记录</p>
           )}
-        </div>
-      </section>
+        </Card>
 
-      <section className="grid grid-cols-2 gap-3">
-        <div className="bg-white rounded-2xl p-4 shadow">
-          <p className="text-gray-500 text-sm">今日手续费</p>
-          <p className="text-2xl font-bold mt-2">${todayFee.toFixed(2)}</p>
-        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <Card>
+            <p className="text-sm text-gray-500">今日手续费</p>
+            <p className="mt-2 text-2xl font-bold">${todayFee.toFixed(2)}</p>
+          </Card>
 
-        <div className="bg-white rounded-2xl p-4 shadow">
-          <p className="text-gray-500 text-sm">累计手续费</p>
-          <p className="text-2xl font-bold mt-2">${totalFee.toFixed(2)}</p>
+          <Card>
+            <p className="text-sm text-gray-500">累计手续费</p>
+            <p className="mt-2 text-2xl font-bold">${totalFee.toFixed(2)}</p>
+          </Card>
         </div>
-      </section>
-    </div>
+      </div>
+    </PageContainer>
   );
 }
