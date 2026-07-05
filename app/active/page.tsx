@@ -1,9 +1,11 @@
 "use client";
-import PageContainer from "../../components/PageContainer";
-import PageTitle from "../../components/PageTitle";
-import EmptyState from "../../components/EmptyState";
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import PageContainer from "@/components/PageContainer";
+import PageTitle from "@/components/PageTitle";
+import Card from "@/components/Card";
+import EmptyState from "@/components/EmptyState";
 
 function today() {
   return new Date().toISOString().slice(0, 10);
@@ -16,6 +18,12 @@ function nowTime() {
 function money(value: number) {
   const sign = value >= 0 ? "+" : "-";
   return `${sign}$${Math.abs(value).toFixed(2)}`;
+}
+
+function profitColor(value: number) {
+  if (value > 0) return "text-green-600";
+  if (value < 0) return "text-red-600";
+  return "text-gray-900";
 }
 
 export default function ActivePage() {
@@ -37,7 +45,10 @@ export default function ActivePage() {
     loadTrades();
   }, []);
 
-  async function completeTrade(event: React.FormEvent<HTMLFormElement>, trade: any) {
+  async function completeTrade(
+    event: React.FormEvent<HTMLFormElement>,
+    trade: any
+  ) {
     event.preventDefault();
     if (savingId) return;
 
@@ -89,7 +100,7 @@ export default function ActivePage() {
       return;
     }
 
-    const newRemainingQty = trade.remaining_qty - qty;
+    const newRemainingQty = Number(trade.remaining_qty) - qty;
     const newStatus = newRemainingQty === 0 ? "已完成" : "进行中";
 
     const { error: updateError } = await supabase
@@ -165,9 +176,7 @@ export default function ActivePage() {
           ...item,
           remaining_qty: restoredQty,
           status: "进行中",
-          executions: item.executions.filter(
-            (ex: any) => ex.id !== execution.id
-          ),
+          executions: item.executions.filter((ex: any) => ex.id !== execution.id),
         };
       })
     );
@@ -191,42 +200,42 @@ export default function ActivePage() {
   }
 
   return (
-    <div>
-      <h2 className="text-3xl font-bold mb-8">进行中订单管理</h2>
+    <PageContainer>
+      <PageTitle title="进行中订单" />
 
       {message && (
-        <div className="mb-4 bg-green-50 border border-green-300 text-green-700 rounded-xl p-4 font-bold">
+        <div className="mb-4 rounded-xl border border-green-300 bg-green-50 p-4 text-base font-bold text-green-700">
           {message}
         </div>
       )}
 
-      <div className="space-y-6">
+      <div className="space-y-5">
         {trades.map((trade) => {
-          const doneQty = trade.total_qty - trade.remaining_qty;
+          const doneQty = Number(trade.total_qty) - Number(trade.remaining_qty);
           const actionText = trade.direction === "买入开仓" ? "卖出" : "买入";
 
           const totalProfit = trade.executions.reduce(
-            (sum: number, item: any) => sum + Number(item.profit),
+            (sum: number, item: any) => sum + Number(item.profit || 0),
             0
           );
 
           const totalFee = trade.executions.reduce(
-            (sum: number, item: any) => sum + Number(item.fee),
+            (sum: number, item: any) => sum + Number(item.fee || 0),
             0
           );
 
           return (
-            <div key={trade.id} className="bg-white rounded-2xl p-6 shadow">
-              <div className="flex justify-between items-center mb-5">
+            <Card key={trade.id}>
+              <div className="mb-5 flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-gray-500">订单编号</p>
-                  <p className="text-3xl font-bold">
+                  <p className="text-base font-bold text-gray-600">订单编号</p>
+                  <p className="mt-1 text-3xl font-extrabold text-gray-950">
                     T{String(trade.id).padStart(6, "0")}
                   </p>
                 </div>
 
                 <div
-                  className={`px-4 py-2 rounded-xl font-bold ${
+                  className={`rounded-xl px-4 py-2 text-base font-extrabold ${
                     trade.direction === "买入开仓"
                       ? "bg-green-100 text-green-700"
                       : "bg-red-100 text-red-700"
@@ -236,99 +245,123 @@ export default function ActivePage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 bg-gray-100 rounded-2xl p-5 mb-5">
-                <div>
-                  <p className="text-gray-500">开仓时间</p>
-                  <p className="text-xl font-bold">
-                    {trade.open_date} {trade.open_time || ""}
-                  </p>
+              <div className="mb-5 space-y-3 rounded-2xl bg-gray-100 p-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-sm font-bold text-gray-600">开仓日期</p>
+                    <p className="mt-1 text-xl font-extrabold text-gray-950">
+                      {trade.open_date}
+                    </p>
+                    {trade.open_time && (
+                      <p className="text-lg font-bold text-gray-900">
+                        {trade.open_time}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-bold text-gray-600">状态</p>
+                    <p className="mt-1 text-xl font-extrabold text-yellow-600">
+                      进行中
+                    </p>
+                  </div>
                 </div>
 
-                <div>
-                  <p className="text-gray-500">状态</p>
-                  <p className="text-xl font-bold text-yellow-600">进行中</p>
-                </div>
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="rounded-xl bg-white p-4">
+                    <p className="text-sm font-bold text-gray-600">开仓价格</p>
+                    <p className="mt-1 text-4xl font-extrabold leading-tight text-blue-700">
+                      ${Number(trade.open_price || 0).toFixed(2)}
+                    </p>
+                  </div>
 
-                <div>
-                  <p className="text-gray-500">开仓价格</p>
-                  <p className="text-5xl font-bold text-blue-700">
-                    ${Number(trade.open_price).toFixed(2)}
-                  </p>
-                </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-xl bg-white p-4">
+                      <p className="text-sm font-bold text-gray-600">开仓数量</p>
+                      <p className="mt-1 text-3xl font-extrabold text-gray-950">
+                        {trade.total_qty}
+                        <span className="ml-1 text-xl">股</span>
+                      </p>
+                    </div>
 
-                <div>
-                  <p className="text-gray-500">开仓数量</p>
-                  <p className="text-5xl font-bold">{trade.total_qty} 股</p>
-                </div>
+                    <div className="rounded-xl bg-white p-4">
+                      <p className="text-sm font-bold text-gray-600">剩余数量</p>
+                      <p className="mt-1 text-3xl font-extrabold text-red-600">
+                        {trade.remaining_qty}
+                        <span className="ml-1 text-xl">股</span>
+                      </p>
+                    </div>
+                  </div>
 
-                <div>
-                  <p className="text-gray-500">已完成数量</p>
-                  <p className="text-3xl font-bold">{doneQty} 股</p>
-                </div>
-
-                <div>
-                  <p className="text-gray-500">剩余数量</p>
-                  <p className="text-3xl font-bold text-red-600">
-                    {trade.remaining_qty} 股
-                  </p>
+                  <div className="rounded-xl bg-white p-4">
+                    <p className="text-sm font-bold text-gray-600">已完成数量</p>
+                    <p className="mt-1 text-2xl font-extrabold text-gray-950">
+                      {doneQty} 股
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 mb-5">
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <p className="text-gray-500">已实现净利润</p>
+              <div className="mb-5 grid grid-cols-2 gap-3">
+                <div className="rounded-xl bg-gray-50 p-4">
+                  <p className="text-sm font-bold text-gray-600">已实现净利润</p>
                   <p
-                    className={`text-2xl font-bold ${
-                      totalProfit >= 0 ? "text-green-600" : "text-red-600"
-                    }`}
+                    className={`mt-1 text-2xl font-extrabold ${profitColor(
+                      totalProfit
+                    )}`}
                   >
                     {money(totalProfit)}
                   </p>
                 </div>
 
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <p className="text-gray-500">累计手续费</p>
-                  <p className="text-2xl font-bold">${totalFee.toFixed(2)}</p>
+                <div className="rounded-xl bg-gray-50 p-4">
+                  <p className="text-sm font-bold text-gray-600">累计手续费</p>
+                  <p className="mt-1 text-2xl font-extrabold text-gray-950">
+                    ${totalFee.toFixed(2)}
+                  </p>
                 </div>
               </div>
 
               {trade.executions.length > 0 && (
-                <div className="border-t pt-4 mb-5">
-                  <p className="font-bold mb-3">完成明细</p>
+                <div className="mb-5 border-t pt-5">
+                  <p className="mb-3 text-xl font-extrabold text-gray-950">
+                    完成明细
+                  </p>
 
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {trade.executions.map((item: any) => (
-                      <div
-                        key={item.id}
-                        className="bg-gray-50 rounded-xl p-3 flex justify-between items-center"
-                      >
-                        <div>
-                          <p className="font-bold">
-                            {item.close_date} {item.close_time || ""} ｜{" "}
-                            {actionText} ${Number(item.close_price).toFixed(2)} ×{" "}
-                            {item.qty} 股
-                          </p>
+                      <div key={item.id} className="rounded-xl bg-gray-50 p-4">
+                        <p className="text-base font-extrabold text-gray-950">
+                          {item.close_date} {item.close_time || ""}
+                        </p>
 
-                          <p>
-                            手续费 ${Number(item.fee).toFixed(2)} ｜ 净利润{" "}
-                            <span
-                              className={
-                                Number(item.profit) >= 0
-                                  ? "text-green-600 font-bold"
-                                  : "text-red-600 font-bold"
-                              }
+                        <p className="mt-1 text-base font-bold text-gray-900">
+                          {actionText} $
+                          {Number(item.close_price || 0).toFixed(2)} ×{" "}
+                          {item.qty} 股
+                        </p>
+
+                        <div className="mt-3 flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-bold text-gray-600">
+                              手续费 ${Number(item.fee || 0).toFixed(2)}
+                            </p>
+                            <p
+                              className={`text-xl font-extrabold ${profitColor(
+                                Number(item.profit || 0)
+                              )}`}
                             >
-                              {money(Number(item.profit))}
-                            </span>
-                          </p>
-                        </div>
+                              {money(Number(item.profit || 0))}
+                            </p>
+                          </div>
 
-                        <button
-                          onClick={() => undoExecution(trade, item)}
-                          className="bg-orange-500 text-white px-3 py-2 rounded-lg font-bold"
-                        >
-                          撤销
-                        </button>
+                          <button
+                            onClick={() => undoExecution(trade, item)}
+                            className="rounded-lg bg-orange-500 px-4 py-2 text-base font-bold text-white"
+                          >
+                            撤销
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -339,15 +372,17 @@ export default function ActivePage() {
                 onSubmit={(event) => completeTrade(event, trade)}
                 className="border-t pt-5"
               >
-                <p className="font-bold text-xl mb-3">{actionText}完成</p>
+                <p className="mb-3 text-xl font-extrabold text-gray-950">
+                  {actionText}完成
+                </p>
 
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 gap-3">
                   <input
                     name="close_date"
                     type="date"
                     defaultValue={today()}
                     required
-                    className="border rounded-lg p-3"
+                    className="w-full rounded-xl border p-4 text-lg font-bold"
                   />
 
                   <input
@@ -355,7 +390,7 @@ export default function ActivePage() {
                     type="time"
                     defaultValue={nowTime()}
                     required
-                    className="border rounded-lg p-3"
+                    className="w-full rounded-xl border p-4 text-lg font-bold"
                   />
 
                   <input
@@ -363,13 +398,17 @@ export default function ActivePage() {
                     type="number"
                     step="0.00000001"
                     required
-                    className="border rounded-lg p-3"
+                    className="w-full rounded-xl border p-4 text-lg font-bold"
                     placeholder={`${actionText}价格`}
                   />
 
-                  <select name="qty" required className="border rounded-lg p-3">
+                  <select
+                    name="qty"
+                    required
+                    className="w-full rounded-xl border p-4 text-lg font-bold"
+                  >
                     {Array.from(
-                      { length: trade.remaining_qty },
+                      { length: Number(trade.remaining_qty) },
                       (_, i) => i + 1
                     ).map((num) => (
                       <option key={num} value={num}>
@@ -379,10 +418,10 @@ export default function ActivePage() {
                   </select>
                 </div>
 
-                <div className="flex gap-3 mt-4">
+                <div className="mt-4 grid grid-cols-1 gap-3">
                   <button
                     disabled={savingId === trade.id}
-                    className={`px-5 py-3 rounded-lg font-bold text-white ${
+                    className={`w-full rounded-xl py-4 text-lg font-extrabold text-white ${
                       savingId === trade.id ? "bg-gray-400" : "bg-green-600"
                     }`}
                   >
@@ -394,20 +433,18 @@ export default function ActivePage() {
                   <button
                     type="button"
                     onClick={() => cancelTrade(trade.id)}
-                    className="bg-red-600 text-white px-5 py-3 rounded-lg font-bold"
+                    className="w-full rounded-xl bg-red-600 py-4 text-lg font-extrabold text-white"
                   >
                     撤单
                   </button>
                 </div>
               </form>
-            </div>
+            </Card>
           );
         })}
 
-{trades.length === 0 && (
-  <EmptyState text="暂无进行中的做T订单" />
-)}
+        {trades.length === 0 && <EmptyState text="暂无进行中的做T订单" />}
       </div>
-    </div>
+    </PageContainer>
   );
 }
