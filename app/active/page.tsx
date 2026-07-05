@@ -342,14 +342,15 @@ export default function ActivePage() {
                     </div>
 
                     <div className="mt-3 grid grid-cols-1 gap-3">
-                      <input
-                        name="close_price"
-                        type="number"
-                        step="0.00000001"
-                        required
-                        className="w-full rounded-xl border p-4 text-lg font-bold"
-                        placeholder={`${actionText}价格`}
-                      />
+                    <input
+  name="close_price"
+  type="number"
+  inputMode="decimal"
+  step="0.00000001"
+  required
+  className="w-full rounded-xl border p-4 text-lg font-bold"
+  placeholder={`${actionText}价格`}
+/>
 
                       <div className="rounded-2xl bg-gray-100 p-4">
                         <p className="mb-3 text-base font-bold text-gray-600">
