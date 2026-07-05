@@ -50,11 +50,11 @@ export default function QtySelector({
 
       <p className="mb-2 text-base font-bold text-gray-600">当前数量</p>
 
-      <div className="flex items-center gap-3">
+      <div className="grid grid-cols-[64px_1fr_64px] gap-3">
         <button
           type="button"
           onClick={minusQty}
-          className="h-16 w-16 rounded-xl border bg-white text-3xl font-extrabold active:scale-95"
+          className="h-16 rounded-xl border bg-white text-3xl font-extrabold active:scale-95"
         >
           −
         </button>
@@ -66,13 +66,13 @@ export default function QtySelector({
           value={qty === 0 ? "" : qty}
           onChange={(e) => inputQty(e.target.value)}
           placeholder="股数"
-          className="h-16 flex-1 rounded-xl border bg-white text-center text-3xl font-extrabold text-gray-950 placeholder:text-gray-300"
+          className="h-16 min-w-0 rounded-xl border bg-white text-center text-3xl font-extrabold text-gray-950 placeholder:text-gray-300"
         />
 
         <button
           type="button"
           onClick={() => addQty(1)}
-          className="h-16 w-16 rounded-xl border bg-white text-3xl font-extrabold active:scale-95"
+          className="h-16 rounded-xl border bg-white text-3xl font-extrabold active:scale-95"
         >
           +
         </button>

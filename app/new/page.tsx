@@ -24,6 +24,8 @@ export default function NewTradePage() {
   const [qty, setQty] = useState(0);
   const [price, setPrice] = useState("");
   const [note, setNote] = useState("");
+  const [openDate, setOpenDate] = useState(getToday());
+  const [openTime, setOpenTime] = useState(getNowTime());
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -45,7 +47,7 @@ export default function NewTradePage() {
     }
 
     const ok = window.confirm(
-      `确认保存？\n\n方向：${direction}\n价格：${openPrice}\n数量：${qty} 股`
+      `确认保存？\n\n方向：${direction}\n时间：${openDate} ${openTime}\n价格：${openPrice}\n数量：${qty} 股`
     );
 
     if (!ok) return;
@@ -53,14 +55,9 @@ export default function NewTradePage() {
     setSaving(true);
     setMessage("");
 
-    const form = new FormData(event.currentTarget);
-
-    const open_date = form.get("open_date") as string;
-    const open_time = form.get("open_time") as string;
-
     const { error } = await supabase.from("trades").insert({
-      open_date,
-      open_time,
+      open_date: openDate,
+      open_time: openTime,
       direction,
       open_price: openPrice,
       total_qty: qty,
@@ -84,22 +81,26 @@ export default function NewTradePage() {
 
       <form onSubmit={handleSubmit}>
         <Card className="space-y-5">
-          <div className="grid grid-cols-2 gap-3">
-            <input
-              name="open_date"
-              type="date"
-              defaultValue={getToday()}
-              required
-              className="h-14 w-full rounded-xl border border-gray-300 bg-white px-3 text-base font-extrabold text-gray-950"
-            />
+          <div className="rounded-2xl border border-gray-300 bg-white p-3">
+            <p className="mb-2 text-sm font-bold text-gray-500">开仓时间</p>
 
-            <input
-              name="open_time"
-              type="time"
-              defaultValue={getNowTime()}
-              required
-              className="h-14 w-full rounded-xl border border-gray-300 bg-white px-3 text-base font-extrabold text-gray-950"
-            />
+            <div className="grid grid-cols-[1.35fr_0.65fr] gap-2">
+              <input
+                type="date"
+                value={openDate}
+                onChange={(e) => setOpenDate(e.target.value)}
+                required
+                className="h-12 min-w-0 bg-transparent text-base font-extrabold text-gray-950"
+              />
+
+              <input
+                type="time"
+                value={openTime}
+                onChange={(e) => setOpenTime(e.target.value)}
+                required
+                className="h-12 min-w-0 bg-transparent text-base font-extrabold text-gray-950"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
