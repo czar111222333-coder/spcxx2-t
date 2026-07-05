@@ -62,11 +62,6 @@ export default function ActivePage() {
     }));
   }
 
-  function addCloseQty(trade: any, value: number) {
-    const current = getQtyNumber(trade);
-    setCloseQty(trade, current + value);
-  }
-
   function blurInput() {
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
@@ -211,7 +206,11 @@ export default function ActivePage() {
         {trades.map((trade) => {
           const isOpen = openId === trade.id;
           const doneQty = Number(trade.total_qty) - Number(trade.remaining_qty);
+          const remainingQty = Number(trade.remaining_qty || 0);
           const actionText = trade.direction === "买入开仓" ? "卖出" : "买入";
+          const quickList = [1, 3, 5, 7, 10].filter(
+            (num) => num <= remainingQty
+          );
 
           const totalProfit = trade.executions.reduce(
             (sum: number, item: any) => sum + Number(item.profit || 0),
@@ -232,7 +231,9 @@ export default function ActivePage() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-base font-bold text-gray-600">订单编号</p>
+                    <p className="text-base font-bold text-gray-600">
+                      订单编号
+                    </p>
                     <p className="mt-1 text-3xl font-extrabold text-gray-950">
                       T{String(trade.id).padStart(6, "0")}
                     </p>
@@ -259,36 +260,67 @@ export default function ActivePage() {
                   <p>开仓：${Number(trade.open_price || 0).toFixed(2)}</p>
                   <p>总数：{trade.total_qty} 股</p>
                   <p>已完成：{doneQty} 股</p>
-                  <p className="text-red-600">剩余：{trade.remaining_qty} 股</p>
+                  <p className="text-red-600">剩余：{remainingQty} 股</p>
                 </div>
               </button>
 
               {isOpen && (
                 <div className="mt-5 border-t pt-5">
-                  <div className="mb-5 grid grid-cols-2 gap-3">
-                    <div className="rounded-xl bg-gray-50 p-4">
-                      <p className="text-sm font-bold text-gray-600">已实现净利润</p>
-                      <p className={`mt-1 text-2xl font-extrabold ${profitColor(totalProfit)}`}>
-                        {money(totalProfit)}
-                      </p>
+                  <div className="mb-4 rounded-2xl bg-gray-100 p-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-sm font-bold text-gray-600">
+                          开仓价格
+                        </p>
+                        <p className="mt-1 text-3xl font-extrabold text-blue-700">
+                          ${Number(trade.open_price || 0).toFixed(2)}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-sm font-bold text-gray-600">
+                          剩余数量
+                        </p>
+                        <p className="mt-1 text-3xl font-extrabold text-red-600">
+                          {remainingQty} 股
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="rounded-xl bg-gray-50 p-4">
-                      <p className="text-sm font-bold text-gray-600">累计手续费</p>
-                      <p className="mt-1 text-2xl font-extrabold">
-                        ${totalFee.toFixed(2)}
-                      </p>
+                    <div className="mt-3 grid grid-cols-2 gap-3">
+                      <div className="rounded-xl bg-white p-3">
+                        <p className="text-sm font-bold text-gray-600">
+                          已实现净利润
+                        </p>
+                        <p
+                          className={`mt-1 text-xl font-extrabold ${profitColor(
+                            totalProfit
+                          )}`}
+                        >
+                          {money(totalProfit)}
+                        </p>
+                      </div>
+
+                      <div className="rounded-xl bg-white p-3">
+                        <p className="text-sm font-bold text-gray-600">
+                          累计手续费
+                        </p>
+                        <p className="mt-1 text-xl font-extrabold">
+                          ${totalFee.toFixed(2)}
+                        </p>
+                      </div>
                     </div>
                   </div>
 
-                  <form
-                    onSubmit={(event) => completeTrade(event, trade)}
-                    className="border-t pt-5"
-                  >
-                    <p className="mb-3 text-xl font-extrabold">{actionText}完成</p>
+                  <form onSubmit={(event) => completeTrade(event, trade)}>
+                    <p className="mb-3 text-xl font-extrabold">
+                      {actionText}完成
+                    </p>
 
                     <div className="rounded-2xl border border-gray-300 bg-white p-3">
-                      <p className="mb-2 text-sm font-bold text-gray-500">完成时间</p>
+                      <p className="mb-2 text-sm font-bold text-gray-500">
+                        完成时间
+                      </p>
 
                       <div className="grid grid-cols-[1.35fr_0.65fr] gap-2">
                         <input
@@ -325,14 +357,14 @@ export default function ActivePage() {
                         </p>
 
                         <div className="mb-3 grid grid-cols-6 gap-2">
-                          {[1, 3, 5, 7, 10].map((num) => (
+                          {quickList.map((num) => (
                             <button
                               key={num}
                               type="button"
                               onMouseDown={(e) => e.preventDefault()}
                               onClick={() => {
                                 blurInput();
-                                addCloseQty(trade, num);
+                                setCloseQty(trade, num);
                               }}
                               className="rounded-xl border bg-white py-3 text-lg font-extrabold"
                             >
@@ -345,7 +377,7 @@ export default function ActivePage() {
                             onMouseDown={(e) => e.preventDefault()}
                             onClick={() => {
                               blurInput();
-                              setCloseQty(trade, Number(trade.remaining_qty));
+                              setCloseQty(trade, remainingQty);
                             }}
                             className="rounded-xl bg-gray-900 py-3 text-base font-extrabold text-white"
                           >
@@ -363,7 +395,7 @@ export default function ActivePage() {
                         />
 
                         <p className="mt-2 text-sm font-bold text-gray-500">
-                          剩余 {trade.remaining_qty} 股，保存时会校验不能超过剩余数量
+                          剩余 {remainingQty} 股，快捷按钮不会超过剩余数量
                         </p>
                       </div>
                     </div>
@@ -375,7 +407,9 @@ export default function ActivePage() {
                           savingId === trade.id ? "bg-gray-400" : "bg-green-600"
                         }`}
                       >
-                        {savingId === trade.id ? "正在保存..." : `保存${actionText}记录`}
+                        {savingId === trade.id
+                          ? "正在保存..."
+                          : `保存${actionText}记录`}
                       </button>
 
                       <button
