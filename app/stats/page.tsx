@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 import { supabase } from "@/lib/supabase";
 import PageContainer from "@/components/PageContainer";
 import PageTitle from "@/components/PageTitle";
