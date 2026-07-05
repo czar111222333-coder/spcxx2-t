@@ -103,81 +103,38 @@ export default function CompletedPage() {
                   </div>
                 </div>
 
-                <div className="mt-4 grid grid-cols-2 gap-3 text-base font-bold text-gray-950">
-                  <p>方向：{trade.direction}</p>
-                  <p>数量：{trade.total_qty} 股</p>
-                  <p>开仓：${Number(trade.open_price || 0).toFixed(2)}</p>
-                  <p>完成：{trade.executions.length} 次</p>
+                <div className="mt-4 space-y-2 text-base font-bold text-gray-950">
+                  <p>
+                    {trade.direction}｜{trade.total_qty} 股｜完成{" "}
+                    {trade.executions.length} 次
+                  </p>
+
+                  <p>开仓 ${Number(trade.open_price || 0).toFixed(2)}</p>
+
+                  <p>
+                    手续费 ${totalFee.toFixed(2)} ｜ 收益率{" "}
+                    <span className={profitColor(returnRate)}>
+                      {returnRate.toFixed(2)}%
+                    </span>
+                  </p>
                 </div>
               </button>
 
               {isOpen && (
                 <div className="mt-5 border-t pt-5">
-                  <div className="mb-4 rounded-2xl bg-gray-100 p-4">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <p className="text-sm font-bold text-gray-600">
-                          开仓方向
-                        </p>
-                        <p
-                          className={`mt-1 text-xl font-extrabold ${
-                            trade.direction === "买入开仓"
-                              ? "text-green-600"
-                              : "text-red-600"
-                          }`}
-                        >
-                          {trade.direction}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-sm font-bold text-gray-600">
-                          开仓时间
-                        </p>
-                        <p className="mt-1 text-xl font-extrabold text-gray-950">
-                          {trade.open_date}
-                        </p>
-                        {trade.open_time && (
-                          <p className="text-lg font-bold text-gray-900">
-                            {trade.open_time}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="mt-3 grid grid-cols-2 gap-3">
-                      <div className="rounded-xl bg-white p-3">
-                        <p className="text-sm font-bold text-gray-600">
-                          开仓价格
-                        </p>
-                        <p className="mt-1 text-2xl font-extrabold text-blue-700">
-                          ${Number(trade.open_price || 0).toFixed(2)}
-                        </p>
-                      </div>
-
-                      <div className="rounded-xl bg-white p-3">
-                        <p className="text-sm font-bold text-gray-600">
-                          开仓数量
-                        </p>
-                        <p className="mt-1 text-2xl font-extrabold text-gray-950">
-                          {trade.total_qty} 股
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
                   <p className="mb-3 text-xl font-extrabold text-gray-950">
                     完成明细
                   </p>
 
-                  <div className="mb-5 space-y-3">
-                    {trade.executions.map((item: any) => (
+                  <div className="space-y-3">
+                    {trade.executions.map((item: any, index: number) => (
                       <div key={item.id} className="rounded-xl bg-gray-50 p-4">
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <p className="text-base font-extrabold text-gray-950">
-                              {item.close_date}
+                              {index + 1}. {item.close_date}
                             </p>
+
                             {item.close_time && (
                               <p className="text-sm font-bold text-gray-500">
                                 {item.close_time}
@@ -194,82 +151,16 @@ export default function CompletedPage() {
                           </p>
                         </div>
 
-                        <div className="mt-3 grid grid-cols-2 gap-3">
-                          <div>
-                            <p className="text-sm font-bold text-gray-600">
-                              {actionText}价格
-                            </p>
-                            <p className="text-lg font-extrabold text-gray-950">
-                              ${Number(item.close_price || 0).toFixed(2)}
-                            </p>
-                          </div>
+                        <p className="mt-3 text-base font-extrabold text-gray-950">
+                          {actionText} {item.qty} 股 @ $
+                          {Number(item.close_price || 0).toFixed(2)}
+                        </p>
 
-                          <div>
-                            <p className="text-sm font-bold text-gray-600">
-                              数量
-                            </p>
-                            <p className="text-lg font-extrabold text-gray-950">
-                              {item.qty} 股
-                            </p>
-                          </div>
-
-                          <div>
-                            <p className="text-sm font-bold text-gray-600">
-                              手续费
-                            </p>
-                            <p className="text-lg font-extrabold text-gray-950">
-                              ${Number(item.fee || 0).toFixed(2)}
-                            </p>
-                          </div>
-
-                          <div>
-                            <p className="text-sm font-bold text-gray-600">
-                              净利润
-                            </p>
-                            <p
-                              className={`text-lg font-extrabold ${profitColor(
-                                Number(item.profit || 0)
-                              )}`}
-                            >
-                              {money(Number(item.profit || 0))}
-                            </p>
-                          </div>
-                        </div>
+                        <p className="mt-1 text-sm font-bold text-gray-600">
+                          手续费 ${Number(item.fee || 0).toFixed(2)}
+                        </p>
                       </div>
                     ))}
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="rounded-xl bg-gray-50 p-3">
-                      <p className="text-sm font-bold text-gray-600">
-                        总手续费
-                      </p>
-                      <p className="mt-1 text-xl font-extrabold text-gray-950">
-                        ${totalFee.toFixed(2)}
-                      </p>
-                    </div>
-
-                    <div className="rounded-xl bg-gray-50 p-3">
-                      <p className="text-sm font-bold text-gray-600">净利润</p>
-                      <p
-                        className={`mt-1 text-xl font-extrabold ${profitColor(
-                          totalProfit
-                        )}`}
-                      >
-                        {money(totalProfit)}
-                      </p>
-                    </div>
-
-                    <div className="rounded-xl bg-gray-50 p-3">
-                      <p className="text-sm font-bold text-gray-600">收益率</p>
-                      <p
-                        className={`mt-1 text-xl font-extrabold ${profitColor(
-                          returnRate
-                        )}`}
-                      >
-                        {returnRate.toFixed(2)}%
-                      </p>
-                    </div>
                   </div>
                 </div>
               )}
