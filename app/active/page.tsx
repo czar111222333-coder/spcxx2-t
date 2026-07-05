@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import EmptyState from "@/components/EmptyState";
 
 function today() {
   return new Date().toISOString().slice(0, 10);
@@ -402,11 +403,9 @@ export default function ActivePage() {
           );
         })}
 
-        {trades.length === 0 && (
-          <div className="bg-white rounded-xl p-8 shadow text-gray-500 text-center">
-            暂无进行中的做T订单
-          </div>
-        )}
+{trades.length === 0 && (
+  <EmptyState text="暂无进行中的做T订单" />
+)}
       </div>
     </div>
   );
