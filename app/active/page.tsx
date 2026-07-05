@@ -28,8 +28,10 @@ function profitColor(value: number) {
 
 export default function ActivePage() {
   const [trades, setTrades] = useState<any[]>([]);
+  const [openId, setOpenId] = useState<number | null>(null);
   const [message, setMessage] = useState("");
   const [savingId, setSavingId] = useState<number | null>(null);
+  const [qtyMap, setQtyMap] = useState<Record<number, number>>({});
 
   async function loadTrades() {
     const { data } = await supabase
@@ -45,21 +47,45 @@ export default function ActivePage() {
     loadTrades();
   }, []);
 
+  function getQty(trade: any) {
+    return qtyMap[trade.id] ?? Number(trade.remaining_qty || 0);
+  }
+
+  function setCloseQty(trade: any, value: number) {
+    const max = Number(trade.remaining_qty || 0);
+    const next = Math.max(1, Math.min(max, Math.floor(value || 1)));
+
+    setQtyMap((old) => ({
+      ...old,
+      [trade.id]: next,
+    }));
+  }
+
+  function addCloseQty(trade: any, value: number) {
+    setCloseQty(trade, getQty(trade) + value);
+  }
+
   async function completeTrade(
     event: React.FormEvent<HTMLFormElement>,
     trade: any
   ) {
     event.preventDefault();
+
     if (savingId) return;
 
     const form = new FormData(event.currentTarget);
     const close_date = form.get("close_date") as string;
     const close_time = form.get("close_time") as string;
     const close_price = Number(form.get("close_price"));
-    const qty = Number(form.get("qty"));
+    const qty = getQty(trade);
 
     if (!close_price || close_price <= 0) {
       setMessage("请输入正确的完成价格");
+      return;
+    }
+
+    if (!qty || qty <= 0 || qty > Number(trade.remaining_qty)) {
+      setMessage("请输入正确的完成数量");
       return;
     }
 
@@ -132,56 +158,14 @@ export default function ActivePage() {
         .filter((item) => item.status === "进行中")
     );
 
+    setQtyMap((old) => {
+      const copy = { ...old };
+      delete copy[trade.id];
+      return copy;
+    });
+
     setMessage(`T${trade.id} ${actionText}完成记录已保存`);
     setSavingId(null);
-  }
-
-  async function undoExecution(trade: any, execution: any) {
-    const ok = window.confirm(
-      `确定撤销这条完成记录吗？\n\n价格：${execution.close_price}\n数量：${execution.qty} 股`
-    );
-
-    if (!ok) return;
-
-    const restoredQty = Number(trade.remaining_qty) + Number(execution.qty);
-
-    const { error: deleteError } = await supabase
-      .from("executions")
-      .delete()
-      .eq("id", execution.id);
-
-    if (deleteError) {
-      setMessage("撤销失败：" + deleteError.message);
-      return;
-    }
-
-    const { error: updateError } = await supabase
-      .from("trades")
-      .update({
-        remaining_qty: restoredQty,
-        status: "进行中",
-      })
-      .eq("id", trade.id);
-
-    if (updateError) {
-      setMessage("恢复数量失败：" + updateError.message);
-      return;
-    }
-
-    setTrades((oldTrades) =>
-      oldTrades.map((item) => {
-        if (item.id !== trade.id) return item;
-
-        return {
-          ...item,
-          remaining_qty: restoredQty,
-          status: "进行中",
-          executions: item.executions.filter((ex: any) => ex.id !== execution.id),
-        };
-      })
-    );
-
-    setMessage(`T${trade.id} 已撤销一条完成记录`);
   }
 
   async function cancelTrade(id: number) {
@@ -211,6 +195,7 @@ export default function ActivePage() {
 
       <div className="space-y-5">
         {trades.map((trade) => {
+          const isOpen = openId === trade.id;
           const doneQty = Number(trade.total_qty) - Number(trade.remaining_qty);
           const actionText = trade.direction === "买入开仓" ? "卖出" : "买入";
 
@@ -226,219 +211,240 @@ export default function ActivePage() {
 
           return (
             <Card key={trade.id}>
-              <div className="mb-5 flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-base font-bold text-gray-600">订单编号</p>
-                  <p className="mt-1 text-3xl font-extrabold text-gray-950">
-                    T{String(trade.id).padStart(6, "0")}
+              <button
+                type="button"
+                onClick={() => setOpenId(isOpen ? null : trade.id)}
+                className="w-full text-left"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-base font-bold text-gray-600">
+                      订单编号
+                    </p>
+                    <p className="mt-1 text-3xl font-extrabold text-gray-950">
+                      T{String(trade.id).padStart(6, "0")}
+                    </p>
+                  </div>
+
+                  <div className="text-right">
+                    <div
+                      className={`rounded-xl px-4 py-2 text-base font-extrabold ${
+                        trade.direction === "买入开仓"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-700"
+                      }`}
+                    >
+                      {trade.direction}
+                    </div>
+
+                    <p className="mt-2 text-sm font-bold text-gray-500">
+                      {isOpen ? "点击收起 ▲" : "点击展开 ▼"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3 text-base font-bold text-gray-950">
+                  <p>开仓：${Number(trade.open_price || 0).toFixed(2)}</p>
+                  <p>总数：{trade.total_qty} 股</p>
+                  <p>已完成：{doneQty} 股</p>
+                  <p className="text-red-600">
+                    剩余：{trade.remaining_qty} 股
                   </p>
                 </div>
+              </button>
 
-                <div
-                  className={`rounded-xl px-4 py-2 text-base font-extrabold ${
-                    trade.direction === "买入开仓"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-red-100 text-red-700"
-                  }`}
-                >
-                  {trade.direction}
-                </div>
-              </div>
+              {isOpen && (
+                <div className="mt-5 border-t pt-5">
+                  <div className="mb-5 space-y-3 rounded-2xl bg-gray-100 p-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-sm font-bold text-gray-600">
+                          开仓日期
+                        </p>
+                        <p className="mt-1 text-xl font-extrabold text-gray-950">
+                          {trade.open_date}
+                        </p>
+                        {trade.open_time && (
+                          <p className="text-lg font-bold text-gray-900">
+                            {trade.open_time}
+                          </p>
+                        )}
+                      </div>
 
-              <div className="mb-5 space-y-3 rounded-2xl bg-gray-100 p-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-sm font-bold text-gray-600">开仓日期</p>
-                    <p className="mt-1 text-xl font-extrabold text-gray-950">
-                      {trade.open_date}
-                    </p>
-                    {trade.open_time && (
-                      <p className="text-lg font-bold text-gray-900">
-                        {trade.open_time}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-bold text-gray-600">状态</p>
-                    <p className="mt-1 text-xl font-extrabold text-yellow-600">
-                      进行中
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-3">
-                  <div className="rounded-xl bg-white p-4">
-                    <p className="text-sm font-bold text-gray-600">开仓价格</p>
-                    <p className="mt-1 text-4xl font-extrabold leading-tight text-blue-700">
-                      ${Number(trade.open_price || 0).toFixed(2)}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-xl bg-white p-4">
-                      <p className="text-sm font-bold text-gray-600">开仓数量</p>
-                      <p className="mt-1 text-3xl font-extrabold text-gray-950">
-                        {trade.total_qty}
-                        <span className="ml-1 text-xl">股</span>
-                      </p>
+                      <div>
+                        <p className="text-sm font-bold text-gray-600">状态</p>
+                        <p className="mt-1 text-xl font-extrabold text-yellow-600">
+                          进行中
+                        </p>
+                      </div>
                     </div>
 
                     <div className="rounded-xl bg-white p-4">
-                      <p className="text-sm font-bold text-gray-600">剩余数量</p>
-                      <p className="mt-1 text-3xl font-extrabold text-red-600">
-                        {trade.remaining_qty}
-                        <span className="ml-1 text-xl">股</span>
+                      <p className="text-sm font-bold text-gray-600">
+                        开仓价格
+                      </p>
+                      <p className="mt-1 text-4xl font-extrabold text-blue-700">
+                        ${Number(trade.open_price || 0).toFixed(2)}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-xl bg-white p-4">
+                        <p className="text-sm font-bold text-gray-600">
+                          开仓数量
+                        </p>
+                        <p className="mt-1 text-3xl font-extrabold">
+                          {trade.total_qty} 股
+                        </p>
+                      </div>
+
+                      <div className="rounded-xl bg-white p-4">
+                        <p className="text-sm font-bold text-gray-600">
+                          剩余数量
+                        </p>
+                        <p className="mt-1 text-3xl font-extrabold text-red-600">
+                          {trade.remaining_qty} 股
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl bg-white p-4">
+                      <p className="text-sm font-bold text-gray-600">
+                        已完成数量
+                      </p>
+                      <p className="mt-1 text-2xl font-extrabold">
+                        {doneQty} 股
                       </p>
                     </div>
                   </div>
 
-                  <div className="rounded-xl bg-white p-4">
-                    <p className="text-sm font-bold text-gray-600">已完成数量</p>
-                    <p className="mt-1 text-2xl font-extrabold text-gray-950">
-                      {doneQty} 股
-                    </p>
-                  </div>
-                </div>
-              </div>
+                  <div className="mb-5 grid grid-cols-2 gap-3">
+                    <div className="rounded-xl bg-gray-50 p-4">
+                      <p className="text-sm font-bold text-gray-600">
+                        已实现净利润
+                      </p>
+                      <p
+                        className={`mt-1 text-2xl font-extrabold ${profitColor(
+                          totalProfit
+                        )}`}
+                      >
+                        {money(totalProfit)}
+                      </p>
+                    </div>
 
-              <div className="mb-5 grid grid-cols-2 gap-3">
-                <div className="rounded-xl bg-gray-50 p-4">
-                  <p className="text-sm font-bold text-gray-600">已实现净利润</p>
-                  <p
-                    className={`mt-1 text-2xl font-extrabold ${profitColor(
-                      totalProfit
-                    )}`}
+                    <div className="rounded-xl bg-gray-50 p-4">
+                      <p className="text-sm font-bold text-gray-600">
+                        累计手续费
+                      </p>
+                      <p className="mt-1 text-2xl font-extrabold">
+                        ${totalFee.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <form
+                    onSubmit={(event) => completeTrade(event, trade)}
+                    className="border-t pt-5"
                   >
-                    {money(totalProfit)}
-                  </p>
-                </div>
+                    <p className="mb-3 text-xl font-extrabold">
+                      {actionText}完成
+                    </p>
 
-                <div className="rounded-xl bg-gray-50 p-4">
-                  <p className="text-sm font-bold text-gray-600">累计手续费</p>
-                  <p className="mt-1 text-2xl font-extrabold text-gray-950">
-                    ${totalFee.toFixed(2)}
-                  </p>
-                </div>
-              </div>
+                    <div className="grid grid-cols-1 gap-3">
+                      <input
+                        name="close_date"
+                        type="date"
+                        defaultValue={today()}
+                        required
+                        className="w-full rounded-xl border p-4 text-lg font-bold"
+                      />
 
-              {trade.executions.length > 0 && (
-                <div className="mb-5 border-t pt-5">
-                  <p className="mb-3 text-xl font-extrabold text-gray-950">
-                    完成明细
-                  </p>
+                      <input
+                        name="close_time"
+                        type="time"
+                        defaultValue={nowTime()}
+                        required
+                        className="w-full rounded-xl border p-4 text-lg font-bold"
+                      />
 
-                  <div className="space-y-3">
-                    {trade.executions.map((item: any) => (
-                      <div key={item.id} className="rounded-xl bg-gray-50 p-4">
-                        <p className="text-base font-extrabold text-gray-950">
-                          {item.close_date} {item.close_time || ""}
+                      <input
+                        name="close_price"
+                        type="number"
+                        step="0.00000001"
+                        required
+                        className="w-full rounded-xl border p-4 text-lg font-bold"
+                        placeholder={`${actionText}价格`}
+                      />
+
+                      <div className="rounded-2xl bg-gray-100 p-4">
+                        <p className="mb-3 text-base font-bold text-gray-600">
+                          {actionText}数量
                         </p>
 
-                        <p className="mt-1 text-base font-bold text-gray-900">
-                          {actionText} $
-                          {Number(item.close_price || 0).toFixed(2)} ×{" "}
-                          {item.qty} 股
-                        </p>
-
-                        <div className="mt-3 flex items-center justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-bold text-gray-600">
-                              手续费 ${Number(item.fee || 0).toFixed(2)}
-                            </p>
-                            <p
-                              className={`text-xl font-extrabold ${profitColor(
-                                Number(item.profit || 0)
-                              )}`}
+                        <div className="mb-3 grid grid-cols-6 gap-2">
+                          {[1, 3, 5, 7, 10].map((num) => (
+                            <button
+                              key={num}
+                              type="button"
+                              onClick={() => addCloseQty(trade, num)}
+                              className="rounded-xl border bg-white py-3 text-lg font-extrabold"
                             >
-                              {money(Number(item.profit || 0))}
-                            </p>
-                          </div>
+                              {num}
+                            </button>
+                          ))}
 
                           <button
-                            onClick={() => undoExecution(trade, item)}
-                            className="rounded-lg bg-orange-500 px-4 py-2 text-base font-bold text-white"
+                            type="button"
+                            onClick={() =>
+                              setCloseQty(trade, Number(trade.remaining_qty))
+                            }
+                            className="rounded-xl bg-gray-900 py-3 text-base font-extrabold text-white"
                           >
-                            撤销
+                            全部
                           </button>
                         </div>
+
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          value={getQty(trade)}
+                          onChange={(e) =>
+                            setCloseQty(trade, Number(e.target.value))
+                          }
+                          className="h-16 w-full rounded-xl border bg-white text-center text-3xl font-extrabold"
+                        />
+
+                        <p className="mt-2 text-sm font-bold text-gray-500">
+                          最多可{actionText} {trade.remaining_qty} 股
+                        </p>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-1 gap-3">
+                      <button
+                        disabled={savingId === trade.id}
+                        className={`w-full rounded-xl py-4 text-lg font-extrabold text-white ${
+                          savingId === trade.id
+                            ? "bg-gray-400"
+                            : "bg-green-600"
+                        }`}
+                      >
+                        {savingId === trade.id
+                          ? "正在保存..."
+                          : `保存${actionText}记录`}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => cancelTrade(trade.id)}
+                        className="w-full rounded-xl bg-red-600 py-4 text-lg font-extrabold text-white"
+                      >
+                        撤单
+                      </button>
+                    </div>
+                  </form>
                 </div>
               )}
-
-              <form
-                onSubmit={(event) => completeTrade(event, trade)}
-                className="border-t pt-5"
-              >
-                <p className="mb-3 text-xl font-extrabold text-gray-950">
-                  {actionText}完成
-                </p>
-
-                <div className="grid grid-cols-1 gap-3">
-                  <input
-                    name="close_date"
-                    type="date"
-                    defaultValue={today()}
-                    required
-                    className="w-full rounded-xl border p-4 text-lg font-bold"
-                  />
-
-                  <input
-                    name="close_time"
-                    type="time"
-                    defaultValue={nowTime()}
-                    required
-                    className="w-full rounded-xl border p-4 text-lg font-bold"
-                  />
-
-                  <input
-                    name="close_price"
-                    type="number"
-                    step="0.00000001"
-                    required
-                    className="w-full rounded-xl border p-4 text-lg font-bold"
-                    placeholder={`${actionText}价格`}
-                  />
-
-                  <select
-                    name="qty"
-                    required
-                    className="w-full rounded-xl border p-4 text-lg font-bold"
-                  >
-                    {Array.from(
-                      { length: Number(trade.remaining_qty) },
-                      (_, i) => i + 1
-                    ).map((num) => (
-                      <option key={num} value={num}>
-                        {num} 股
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="mt-4 grid grid-cols-1 gap-3">
-                  <button
-                    disabled={savingId === trade.id}
-                    className={`w-full rounded-xl py-4 text-lg font-extrabold text-white ${
-                      savingId === trade.id ? "bg-gray-400" : "bg-green-600"
-                    }`}
-                  >
-                    {savingId === trade.id
-                      ? "正在保存..."
-                      : `保存${actionText}记录`}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => cancelTrade(trade.id)}
-                    className="w-full rounded-xl bg-red-600 py-4 text-lg font-extrabold text-white"
-                  >
-                    撤单
-                  </button>
-                </div>
-              </form>
             </Card>
           );
         })}
