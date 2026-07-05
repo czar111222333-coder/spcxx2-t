@@ -77,6 +77,7 @@ export default function CompletedPage() {
           return (
             <Card key={trade.id}>
               <button
+                type="button"
                 onClick={() => setOpenId(isOpen ? null : trade.id)}
                 className="w-full text-left"
               >
@@ -112,7 +113,7 @@ export default function CompletedPage() {
 
               {isOpen && (
                 <div className="mt-5 border-t pt-5">
-                  <div className="mb-5 space-y-3 rounded-2xl bg-gray-100 p-4">
+                  <div className="mb-4 rounded-2xl bg-gray-100 p-4">
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <p className="text-sm font-bold text-gray-600">
@@ -144,19 +145,24 @@ export default function CompletedPage() {
                       </div>
                     </div>
 
-                    <div className="rounded-xl bg-white p-4">
-                      <p className="text-sm font-bold text-gray-600">开仓价格</p>
-                      <p className="mt-1 text-4xl font-extrabold leading-tight text-blue-700">
-                        ${Number(trade.open_price || 0).toFixed(2)}
-                      </p>
-                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-3">
+                      <div className="rounded-xl bg-white p-3">
+                        <p className="text-sm font-bold text-gray-600">
+                          开仓价格
+                        </p>
+                        <p className="mt-1 text-2xl font-extrabold text-blue-700">
+                          ${Number(trade.open_price || 0).toFixed(2)}
+                        </p>
+                      </div>
 
-                    <div className="rounded-xl bg-white p-4">
-                      <p className="text-sm font-bold text-gray-600">开仓数量</p>
-                      <p className="mt-1 text-4xl font-extrabold leading-tight text-gray-950">
-                        {trade.total_qty}
-                        <span className="ml-1 text-2xl">股</span>
-                      </p>
+                      <div className="rounded-xl bg-white p-3">
+                        <p className="text-sm font-bold text-gray-600">
+                          开仓数量
+                        </p>
+                        <p className="mt-1 text-2xl font-extrabold text-gray-950">
+                          {trade.total_qty} 股
+                        </p>
+                      </div>
                     </div>
                   </div>
 
@@ -167,22 +173,51 @@ export default function CompletedPage() {
                   <div className="mb-5 space-y-3">
                     {trade.executions.map((item: any) => (
                       <div key={item.id} className="rounded-xl bg-gray-50 p-4">
-                        <p className="text-base font-extrabold text-gray-950">
-                          {item.close_date} {item.close_time || ""}
-                        </p>
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-base font-extrabold text-gray-950">
+                              {item.close_date}
+                            </p>
+                            {item.close_time && (
+                              <p className="text-sm font-bold text-gray-500">
+                                {item.close_time}
+                              </p>
+                            )}
+                          </div>
 
-                        <p className="mt-1 text-base font-bold text-gray-900">
-                          {actionText} $
-                          {Number(item.close_price || 0).toFixed(2)} ×{" "}
-                          {item.qty} 股
-                        </p>
+                          <p
+                            className={`text-xl font-extrabold ${profitColor(
+                              Number(item.profit || 0)
+                            )}`}
+                          >
+                            {money(Number(item.profit || 0))}
+                          </p>
+                        </div>
 
                         <div className="mt-3 grid grid-cols-2 gap-3">
                           <div>
                             <p className="text-sm font-bold text-gray-600">
+                              {actionText}价格
+                            </p>
+                            <p className="text-lg font-extrabold text-gray-950">
+                              ${Number(item.close_price || 0).toFixed(2)}
+                            </p>
+                          </div>
+
+                          <div>
+                            <p className="text-sm font-bold text-gray-600">
+                              数量
+                            </p>
+                            <p className="text-lg font-extrabold text-gray-950">
+                              {item.qty} 股
+                            </p>
+                          </div>
+
+                          <div>
+                            <p className="text-sm font-bold text-gray-600">
                               手续费
                             </p>
-                            <p className="text-xl font-extrabold text-gray-950">
+                            <p className="text-lg font-extrabold text-gray-950">
                               ${Number(item.fee || 0).toFixed(2)}
                             </p>
                           </div>
@@ -192,7 +227,7 @@ export default function CompletedPage() {
                               净利润
                             </p>
                             <p
-                              className={`text-xl font-extrabold ${profitColor(
+                              className={`text-lg font-extrabold ${profitColor(
                                 Number(item.profit || 0)
                               )}`}
                             >
@@ -204,18 +239,20 @@ export default function CompletedPage() {
                     ))}
                   </div>
 
-                  <div className="grid grid-cols-1 gap-3">
-                    <div className="rounded-xl bg-gray-50 p-4">
-                      <p className="text-sm font-bold text-gray-600">总手续费</p>
-                      <p className="mt-1 text-2xl font-extrabold text-gray-950">
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="rounded-xl bg-gray-50 p-3">
+                      <p className="text-sm font-bold text-gray-600">
+                        总手续费
+                      </p>
+                      <p className="mt-1 text-xl font-extrabold text-gray-950">
                         ${totalFee.toFixed(2)}
                       </p>
                     </div>
 
-                    <div className="rounded-xl bg-gray-50 p-4">
+                    <div className="rounded-xl bg-gray-50 p-3">
                       <p className="text-sm font-bold text-gray-600">净利润</p>
                       <p
-                        className={`mt-1 text-2xl font-extrabold ${profitColor(
+                        className={`mt-1 text-xl font-extrabold ${profitColor(
                           totalProfit
                         )}`}
                       >
@@ -223,10 +260,10 @@ export default function CompletedPage() {
                       </p>
                     </div>
 
-                    <div className="rounded-xl bg-gray-50 p-4">
+                    <div className="rounded-xl bg-gray-50 p-3">
                       <p className="text-sm font-bold text-gray-600">收益率</p>
                       <p
-                        className={`mt-1 text-2xl font-extrabold ${profitColor(
+                        className={`mt-1 text-xl font-extrabold ${profitColor(
                           returnRate
                         )}`}
                       >
