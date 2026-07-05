@@ -1,15 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { getAppSettings, parseQuickQty } from "@/lib/settings";
 import PageContainer from "@/components/PageContainer";
 import PageTitle from "@/components/PageTitle";
 import Card from "@/components/Card";
 import PrimaryButton from "@/components/PrimaryButton";
 import QtySelector from "@/components/QtySelector";
-
-const FEE_RATE = 0.001;
 
 function getToday() {
   return new Date().toISOString().slice(0, 10);
@@ -28,8 +27,21 @@ export default function NewTradePage() {
   const [note, setNote] = useState("");
   const [openDate, setOpenDate] = useState(getToday());
   const [openTime, setOpenTime] = useState(getNowTime());
+  const [feeRate, setFeeRate] = useState(0.001);
+  const [quickQty, setQuickQty] = useState<number[]>([1, 3, 5, 7, 10]);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    async function loadSettings() {
+      const settings = await getAppSettings();
+
+      setFeeRate(Number(settings.fee_rate || 0.001));
+      setQuickQty(parseQuickQty(settings.quick_qty || "1,3,5,7,10"));
+    }
+
+    loadSettings();
+  }, []);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -48,7 +60,7 @@ export default function NewTradePage() {
       return;
     }
 
-    const openFee = openPrice * qty * FEE_RATE;
+    const openFee = openPrice * qty * feeRate;
 
     const ok = window.confirm(
       `确认保存？\n\n方向：${direction}\n时间：${openDate} ${openTime}\n价格：${openPrice}\n数量：${qty} 股\n开仓手续费：$${openFee.toFixed(
@@ -152,7 +164,7 @@ export default function NewTradePage() {
             />
           </div>
 
-          <QtySelector qty={qty} setQty={setQty} />
+          <QtySelector qty={qty} setQty={setQty} quickQty={quickQty} />
 
           {message && (
             <p className="rounded-xl bg-red-50 p-3 text-base font-bold text-red-600">

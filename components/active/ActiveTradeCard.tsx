@@ -7,6 +7,7 @@ interface Props {
   trade: any;
   isOpen: boolean;
   qtyValue: string;
+  quickQty: number[];
   saving: boolean;
   onToggle: () => void;
   onQtyChange: (value: string) => void;
@@ -20,6 +21,7 @@ export default function ActiveTradeCard({
   trade,
   isOpen,
   qtyValue,
+  quickQty,
   saving,
   onToggle,
   onQtyChange,
@@ -28,18 +30,15 @@ export default function ActiveTradeCard({
   onCancel,
   onUndo,
 }: Props) {
-  const executionProfit = (trade.executions || []).reduce(
+  const profit = (trade.executions || []).reduce(
     (sum: number, item: any) => sum + Number(item.profit || 0),
     0
   );
 
-  const closeFee = (trade.executions || []).reduce(
-    (sum: number, item: any) => sum + Number(item.close_fee || 0),
+  const fee = (trade.executions || []).reduce(
+    (sum: number, item: any) => sum + Number(item.fee || 0),
     0
   );
-
-  const openFee = Number(trade.open_fee || 0);
-  const totalFee = openFee + closeFee;
 
   return (
     <Card>
@@ -47,8 +46,8 @@ export default function ActiveTradeCard({
         <ActiveTradeSummary
           trade={trade}
           isOpen={isOpen}
-          profit={executionProfit}
-          fee={totalFee}
+          profit={profit}
+          fee={fee}
         />
       </button>
 
@@ -57,6 +56,7 @@ export default function ActiveTradeCard({
           <CloseTradeForm
             trade={trade}
             qtyValue={qtyValue}
+            quickQty={quickQty}
             saving={saving}
             onQtyChange={onQtyChange}
             onQuickQty={onQuickQty}

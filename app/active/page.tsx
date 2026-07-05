@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { getAppSettings, parseQuickQty } from "@/lib/settings";
 import PageContainer from "@/components/PageContainer";
 import PageTitle from "@/components/PageTitle";
 import EmptyState from "@/components/EmptyState";
 import ActiveTradeCard from "@/components/active/ActiveTradeCard";
-
-const FEE_RATE = 0.001;
 
 export default function ActivePage() {
   const [trades, setTrades] = useState<any[]>([]);
@@ -15,6 +14,15 @@ export default function ActivePage() {
   const [message, setMessage] = useState("");
   const [savingId, setSavingId] = useState<number | null>(null);
   const [qtyMap, setQtyMap] = useState<Record<number, string>>({});
+  const [feeRate, setFeeRate] = useState(0.001);
+  const [quickQty, setQuickQty] = useState<number[]>([1, 3, 5, 7, 10]);
+
+  async function loadSettings() {
+    const settings = await getAppSettings();
+
+    setFeeRate(Number(settings.fee_rate || 0.001));
+    setQuickQty(parseQuickQty(settings.quick_qty || "1,3,5,7,10"));
+  }
 
   async function loadTrades() {
     const { data } = await supabase
@@ -27,6 +35,7 @@ export default function ActivePage() {
   }
 
   useEffect(() => {
+    loadSettings();
     loadTrades();
   }, []);
 
@@ -73,8 +82,8 @@ export default function ActivePage() {
 
     const actionText = trade.direction === "买入开仓" ? "卖出" : "买入";
 
-    const openFeePart = openPrice * qty * FEE_RATE;
-    const closeFee = close_price * qty * FEE_RATE;
+    const openFeePart = openPrice * qty * feeRate;
+    const closeFee = close_price * qty * feeRate;
     const totalFee = openFeePart + closeFee;
 
     const profit =
@@ -238,6 +247,7 @@ export default function ActivePage() {
             trade={trade}
             isOpen={openId === trade.id}
             qtyValue={getQtyValue(trade)}
+            quickQty={quickQty}
             saving={savingId === trade.id}
             onToggle={() => setOpenId(openId === trade.id ? null : trade.id)}
             onQtyChange={(value) => setCloseQty(trade, value)}
