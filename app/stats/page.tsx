@@ -4,23 +4,11 @@ export const revalidate = 0;
 import { supabase } from "@/lib/supabase";
 import PageContainer from "@/components/PageContainer";
 import PageTitle from "@/components/PageTitle";
-import Card from "@/components/Card";
 import EmptyState from "@/components/EmptyState";
-
-function money(value: number) {
-  const sign = value >= 0 ? "+" : "-";
-  return `${sign}$${Math.abs(value).toFixed(2)}`;
-}
-
-function usd(value: number) {
-  return `$${Number(value || 0).toFixed(2)}`;
-}
-
-function profitColor(value: number) {
-  if (value > 0) return "text-green-600";
-  if (value < 0) return "text-red-600";
-  return "text-gray-900";
-}
+import ProfitSummary from "@/components/stats/ProfitSummary";
+import ResultSummary from "@/components/stats/ResultSummary";
+import AmountSummary from "@/components/stats/AmountSummary";
+import FeeSummary from "@/components/stats/FeeSummary";
 
 export default async function StatsPage() {
   const today = new Date().toISOString().slice(0, 10);
@@ -127,250 +115,41 @@ export default async function StatsPage() {
         <EmptyState text="暂无统计数据" />
       ) : (
         <div className="space-y-5">
-          <Card>
-            <p className="text-sm font-bold text-gray-500">今日净利润</p>
-            <p className={`mt-2 text-4xl font-extrabold ${profitColor(todayProfit)}`}>
-              {money(todayProfit)}
-            </p>
-            <p className="mt-2 text-xs font-bold text-gray-400">日期：{today}</p>
-          </Card>
+          <ProfitSummary
+            today={todayProfit}
+            month={monthProfit}
+            total={totalProfit}
+            avg={avgProfit}
+            avgPerShare={avgProfitPerShare}
+          />
 
-          <div className="grid grid-cols-2 gap-4">
-            <Card>
-              <p className="text-sm font-bold text-gray-500">本月净利润</p>
-              <p
-                className={`mt-2 text-2xl font-extrabold ${profitColor(
-                  monthProfit
-                )}`}
-              >
-                {money(monthProfit)}
-              </p>
-            </Card>
+          <ResultSummary
+            totalCount={totalCount}
+            winCount={winCount}
+            lossCount={lossCount}
+            flatCount={flatCount}
+            winRate={winRate}
+            maxProfit={maxProfit}
+            maxLoss={maxLoss}
+          />
 
-            <Card>
-              <p className="text-sm font-bold text-gray-500">累计净利润</p>
-              <p
-                className={`mt-2 text-2xl font-extrabold ${profitColor(
-                  totalProfit
-                )}`}
-              >
-                {money(totalProfit)}
-              </p>
-            </Card>
+          <AmountSummary
+            openAmount={openAmount}
+            closeAmount={closeAmount}
+            totalAmount={totalAmount}
+            openQty={openQty}
+            closeQty={closeQty}
+            totalQty={totalQty}
+          />
 
-            <Card>
-              <p className="text-sm font-bold text-gray-500">平均每次盈利</p>
-              <p
-                className={`mt-2 text-2xl font-extrabold ${profitColor(
-                  avgProfit
-                )}`}
-              >
-                {money(avgProfit)}
-              </p>
-            </Card>
-
-            <Card>
-              <p className="text-sm font-bold text-gray-500">平均每股盈利</p>
-              <p
-                className={`mt-2 text-2xl font-extrabold ${profitColor(
-                  avgProfitPerShare
-                )}`}
-              >
-                {money(avgProfitPerShare)}
-              </p>
-            </Card>
-          </div>
-
-          <Card>
-            <h3 className="mb-4 text-lg font-extrabold text-gray-900">
-              交易结果
-            </h3>
-
-            <div className="grid grid-cols-4 gap-3 text-center">
-              <div>
-                <p className="text-xs font-bold text-gray-500">完成</p>
-                <p className="mt-1 text-xl font-extrabold">{totalCount}</p>
-              </div>
-
-              <div>
-                <p className="text-xs font-bold text-gray-500">盈利</p>
-                <p className="mt-1 text-xl font-extrabold text-green-600">
-                  {winCount}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-xs font-bold text-gray-500">亏损</p>
-                <p className="mt-1 text-xl font-extrabold text-red-600">
-                  {lossCount}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-xs font-bold text-gray-500">持平</p>
-                <p className="mt-1 text-xl font-extrabold text-gray-700">
-                  {flatCount}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-5 rounded-xl bg-gray-50 p-4 text-center">
-              <p className="text-sm font-bold text-gray-500">成功率</p>
-              <p className="mt-1 text-3xl font-extrabold text-gray-950">
-                {winRate.toFixed(1)}%
-              </p>
-            </div>
-          </Card>
-
-          <Card>
-            <h3 className="mb-4 text-lg font-extrabold text-gray-900">
-              最大盈亏
-            </h3>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="rounded-xl bg-gray-50 p-4">
-                <p className="text-sm font-bold text-gray-500">最大盈利</p>
-                <p
-                  className={`mt-2 text-2xl font-extrabold ${profitColor(
-                    maxProfit
-                  )}`}
-                >
-                  {money(maxProfit)}
-                </p>
-              </div>
-
-              <div className="rounded-xl bg-gray-50 p-4">
-                <p className="text-sm font-bold text-gray-500">最大亏损</p>
-                <p
-                  className={`mt-2 text-2xl font-extrabold ${profitColor(
-                    maxLoss
-                  )}`}
-                >
-                  {money(maxLoss)}
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          <Card>
-            <h3 className="mb-4 text-lg font-extrabold text-gray-900">
-              成交统计
-            </h3>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-gray-500">
-                  开仓成交额
-                </span>
-                <span className="font-extrabold text-gray-900">
-                  {usd(openAmount)}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-gray-500">
-                  平仓成交额
-                </span>
-                <span className="font-extrabold text-gray-900">
-                  {usd(closeAmount)}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between border-t pt-3">
-                <span className="text-sm font-bold text-gray-500">
-                  累计成交额
-                </span>
-                <span className="font-extrabold text-gray-900">
-                  {usd(totalAmount)}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-gray-500">
-                  开仓股数
-                </span>
-                <span className="font-extrabold text-gray-900">
-                  {openQty} 股
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-gray-500">
-                  平仓股数
-                </span>
-                <span className="font-extrabold text-gray-900">
-                  {closeQty} 股
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between border-t pt-3">
-                <span className="text-sm font-bold text-gray-500">
-                  累计成交股数
-                </span>
-                <span className="font-extrabold text-gray-900">
-                  {totalQty} 股
-                </span>
-              </div>
-            </div>
-          </Card>
-
-          <Card>
-            <h3 className="mb-4 text-lg font-extrabold text-gray-900">
-              手续费统计
-            </h3>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-gray-500">
-                  今日开仓手续费
-                </span>
-                <span className="font-extrabold text-gray-900">
-                  {usd(todayOpenFee)}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-gray-500">
-                  今日平仓手续费
-                </span>
-                <span className="font-extrabold text-gray-900">
-                  {usd(todayCloseFee)}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between border-t pt-3">
-                <span className="text-sm font-bold text-gray-500">今日手续费</span>
-                <span className="font-extrabold text-gray-900">
-                  {usd(todayFee)}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-gray-500">
-                  累计开仓手续费
-                </span>
-                <span className="font-extrabold text-gray-900">
-                  {usd(totalOpenFee)}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-gray-500">
-                  累计平仓手续费
-                </span>
-                <span className="font-extrabold text-gray-900">
-                  {usd(totalCloseFee)}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between border-t pt-3">
-                <span className="text-sm font-bold text-gray-500">累计手续费</span>
-                <span className="font-extrabold text-gray-900">
-                  {usd(totalFee)}
-                </span>
-              </div>
-            </div>
-          </Card>
+          <FeeSummary
+            todayOpenFee={todayOpenFee}
+            todayCloseFee={todayCloseFee}
+            todayFee={todayFee}
+            totalOpenFee={totalOpenFee}
+            totalCloseFee={totalCloseFee}
+            totalFee={totalFee}
+          />
         </div>
       )}
     </PageContainer>
