@@ -75,11 +75,6 @@ export default function NewTradePage() {
       return;
     }
 
-    setPrice("");
-    setQty(0);
-    setNote("");
-    setSaving(false);
-
     router.push("/active");
   }
 
@@ -89,13 +84,13 @@ export default function NewTradePage() {
 
       <form onSubmit={handleSubmit}>
         <Card className="space-y-5">
-          <div className="grid grid-cols-[1.35fr_0.65fr] gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <input
               name="open_date"
               type="date"
               defaultValue={getToday()}
               required
-              className="h-14 w-full rounded-xl border border-gray-300 bg-white px-4 text-lg font-extrabold text-gray-950"
+              className="h-14 w-full rounded-xl border border-gray-300 bg-white px-3 text-base font-extrabold text-gray-950"
             />
 
             <input
@@ -103,7 +98,7 @@ export default function NewTradePage() {
               type="time"
               defaultValue={getNowTime()}
               required
-              className="h-14 w-full rounded-xl border border-gray-300 bg-white px-3 text-lg font-extrabold text-gray-950"
+              className="h-14 w-full rounded-xl border border-gray-300 bg-white px-3 text-base font-extrabold text-gray-950"
             />
           </div>
 
@@ -151,13 +146,6 @@ export default function NewTradePage() {
 
           <QtySelector qty={qty} setQty={setQty} />
 
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            className="min-h-24 w-full rounded-xl border border-gray-300 bg-white p-4 text-base font-bold text-gray-950"
-            placeholder="备注，可不填"
-          />
-
           {message && (
             <p className="rounded-xl bg-red-50 p-3 text-base font-bold text-red-600">
               {message}
@@ -167,6 +155,13 @@ export default function NewTradePage() {
           <PrimaryButton type="submit" disabled={saving}>
             {saving ? "正在保存..." : "保存做T订单"}
           </PrimaryButton>
+
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            className="min-h-20 w-full rounded-xl border border-gray-300 bg-white p-4 text-base font-bold text-gray-950"
+            placeholder="备注，可不填"
+          />
         </Card>
       </form>
     </PageContainer>

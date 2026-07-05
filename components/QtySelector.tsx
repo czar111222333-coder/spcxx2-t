@@ -18,68 +18,65 @@ export default function QtySelector({
   }
 
   function inputQty(value: string) {
-    const num = Number(value);
+    if (value === "") {
+      setQty(0);
+      return;
+    }
 
+    const num = Number(value);
     if (isNaN(num)) return;
 
     setQty(Math.max(0, Math.floor(num)));
   }
 
   return (
-    <div className="bg-gray-100 rounded-2xl p-4">
-      <p className="text-gray-500 mb-3">
+    <div className="rounded-2xl bg-gray-100 p-4">
+      <p className="mb-3 text-base font-bold text-gray-600">
         快捷数量：点击会累加
       </p>
 
-      <div className="grid grid-cols-5 gap-2 mb-5">
+      <div className="mb-5 grid grid-cols-5 gap-2">
         {quickQty.map((num) => (
           <button
             key={num}
             type="button"
             onClick={() => addQty(num)}
-            className="bg-white border rounded-xl py-4 text-2xl font-bold active:scale-95 transition"
+            className="rounded-xl border bg-white py-4 text-2xl font-extrabold active:scale-95"
           >
             {num}
           </button>
         ))}
       </div>
 
-      <p className="text-gray-500 mb-2">
-        当前数量
-      </p>
+      <p className="mb-2 text-base font-bold text-gray-600">当前数量</p>
 
       <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={minusQty}
-          className="w-16 h-16 bg-white border rounded-xl text-3xl font-bold active:scale-95 transition"
+          className="h-16 w-16 rounded-xl border bg-white text-3xl font-extrabold active:scale-95"
         >
           −
         </button>
 
-        <div className="flex-1">
-          <input
-            type="number"
-            inputMode="numeric"
-            min={0}
-            value={qty}
-            onChange={(e) => inputQty(e.target.value)}
-            className="w-full h-16 bg-white border rounded-xl text-center text-4xl font-bold"
-          />
-        </div>
+        <input
+          type="number"
+          inputMode="numeric"
+          min={0}
+          value={qty === 0 ? "" : qty}
+          onChange={(e) => inputQty(e.target.value)}
+          placeholder="股数"
+          className="h-16 flex-1 rounded-xl border bg-white text-center text-3xl font-extrabold text-gray-950 placeholder:text-gray-300"
+        />
 
         <button
           type="button"
           onClick={() => addQty(1)}
-          className="w-16 h-16 bg-white border rounded-xl text-3xl font-bold active:scale-95 transition"
+          className="h-16 w-16 rounded-xl border bg-white text-3xl font-extrabold active:scale-95"
         >
           +
         </button>
       </div>
-
-      <p className="text-center text-gray-500 mt-3 text-sm">
-        股数可直接输入，也可使用快捷按钮或 +/- 调整
-      </p>
     </div>
   );
 }
