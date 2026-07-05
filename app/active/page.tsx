@@ -222,6 +222,11 @@ export default function ActivePage() {
             0
           );
 
+          const progress =
+            Number(trade.total_qty || 0) === 0
+              ? 0
+              : (doneQty / Number(trade.total_qty || 0)) * 100;
+
           return (
             <Card key={trade.id}>
               <button
@@ -240,20 +245,33 @@ export default function ActivePage() {
                   </div>
 
                   <div className="text-right">
-                    <div
-                      className={`rounded-xl px-4 py-2 text-base font-extrabold ${
-                        trade.direction === "买入开仓"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
+                    <p
+                      className={`text-2xl font-extrabold ${profitColor(
+                        totalProfit
+                      )}`}
                     >
-                      {trade.direction}
-                    </div>
-
-                    <p className="mt-2 text-sm font-bold text-gray-500">
+                      {money(totalProfit)}
+                    </p>
+                    <p className="mt-1 text-sm font-bold text-gray-600">
                       {isOpen ? "点击收起 ▲" : "点击展开 ▼"}
                     </p>
                   </div>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between">
+                  <span
+                    className={`rounded-xl px-4 py-2 text-base font-extrabold ${
+                      trade.direction === "买入开仓"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {trade.direction}
+                  </span>
+
+                  <span className="rounded-xl bg-yellow-100 px-4 py-2 text-base font-extrabold text-yellow-700">
+                    进行中
+                  </span>
                 </div>
 
                 <div className="mt-4 grid grid-cols-2 gap-3 text-base font-bold text-gray-950">
@@ -262,167 +280,162 @@ export default function ActivePage() {
                   <p>已完成：{doneQty} 股</p>
                   <p className="text-red-600">剩余：{remainingQty} 股</p>
                 </div>
+
+                <div className="mt-4">
+                  <div className="mb-2 flex items-center justify-between text-sm font-bold text-gray-600">
+                    <span>完成进度</span>
+                    <span>
+                      {doneQty} / {trade.total_qty} 股
+                    </span>
+                  </div>
+
+                  <div className="h-3 overflow-hidden rounded-full bg-gray-200">
+                    <div
+                      className="h-full rounded-full bg-green-600"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <div className="rounded-xl bg-gray-50 p-3">
+                    <p className="text-sm font-bold text-gray-600">
+                      已实现利润
+                    </p>
+                    <p
+                      className={`mt-1 text-xl font-extrabold ${profitColor(
+                        totalProfit
+                      )}`}
+                    >
+                      {money(totalProfit)}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl bg-gray-50 p-3">
+                    <p className="text-sm font-bold text-gray-600">
+                      累计手续费
+                    </p>
+                    <p className="mt-1 text-xl font-extrabold text-gray-950">
+                      ${totalFee.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
               </button>
 
               {isOpen && (
-                <div className="mt-5 border-t pt-5">
-                  <div className="mb-4 rounded-2xl bg-gray-100 p-4">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <p className="text-sm font-bold text-gray-600">
-                          开仓价格
-                        </p>
-                        <p className="mt-1 text-3xl font-extrabold text-blue-700">
-                          ${Number(trade.open_price || 0).toFixed(2)}
-                        </p>
-                      </div>
+                <form
+                  onSubmit={(event) => completeTrade(event, trade)}
+                  className="mt-5 border-t pt-5"
+                >
+                  <p className="mb-3 text-xl font-extrabold text-gray-950">
+                    {actionText}完成
+                  </p>
 
-                      <div>
-                        <p className="text-sm font-bold text-gray-600">
-                          剩余数量
-                        </p>
-                        <p className="mt-1 text-3xl font-extrabold text-red-600">
-                          {remainingQty} 股
-                        </p>
-                      </div>
-                    </div>
+                  <div className="rounded-2xl border border-gray-300 bg-white p-3">
+                    <p className="mb-2 text-sm font-bold text-gray-500">
+                      完成时间
+                    </p>
 
-                    <div className="mt-3 grid grid-cols-2 gap-3">
-                      <div className="rounded-xl bg-white p-3">
-                        <p className="text-sm font-bold text-gray-600">
-                          已实现净利润
-                        </p>
-                        <p
-                          className={`mt-1 text-xl font-extrabold ${profitColor(
-                            totalProfit
-                          )}`}
-                        >
-                          {money(totalProfit)}
-                        </p>
-                      </div>
+                    <div className="grid grid-cols-[1.35fr_0.65fr] gap-2">
+                      <input
+                        name="close_date"
+                        type="date"
+                        defaultValue={today()}
+                        required
+                        className="h-12 min-w-0 bg-transparent text-base font-extrabold text-gray-950"
+                      />
 
-                      <div className="rounded-xl bg-white p-3">
-                        <p className="text-sm font-bold text-gray-600">
-                          累计手续费
-                        </p>
-                        <p className="mt-1 text-xl font-extrabold">
-                          ${totalFee.toFixed(2)}
-                        </p>
-                      </div>
+                      <input
+                        name="close_time"
+                        type="time"
+                        defaultValue={nowTime()}
+                        required
+                        className="h-12 min-w-0 bg-transparent text-base font-extrabold text-gray-950"
+                      />
                     </div>
                   </div>
 
-                  <form onSubmit={(event) => completeTrade(event, trade)}>
-                    <p className="mb-3 text-xl font-extrabold">
-                      {actionText}完成
-                    </p>
+                  <div className="mt-3 grid grid-cols-1 gap-3">
+                    <input
+                      name="close_price"
+                      type="number"
+                      inputMode="decimal"
+                      step="0.00000001"
+                      required
+                      className="w-full rounded-xl border p-4 text-lg font-bold"
+                      placeholder={`${actionText}价格`}
+                    />
 
-                    <div className="rounded-2xl border border-gray-300 bg-white p-3">
-                      <p className="mb-2 text-sm font-bold text-gray-500">
-                        完成时间
+                    <div className="rounded-2xl bg-gray-100 p-4">
+                      <p className="mb-3 text-base font-bold text-gray-600">
+                        {actionText}数量
                       </p>
 
-                      <div className="grid grid-cols-[1.35fr_0.65fr] gap-2">
-                        <input
-                          name="close_date"
-                          type="date"
-                          defaultValue={today()}
-                          required
-                          className="h-12 min-w-0 bg-transparent text-base font-extrabold text-gray-950"
-                        />
-
-                        <input
-                          name="close_time"
-                          type="time"
-                          defaultValue={nowTime()}
-                          required
-                          className="h-12 min-w-0 bg-transparent text-base font-extrabold text-gray-950"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="mt-3 grid grid-cols-1 gap-3">
-                    <input
-  name="close_price"
-  type="number"
-  inputMode="decimal"
-  step="0.00000001"
-  required
-  className="w-full rounded-xl border p-4 text-lg font-bold"
-  placeholder={`${actionText}价格`}
-/>
-
-                      <div className="rounded-2xl bg-gray-100 p-4">
-                        <p className="mb-3 text-base font-bold text-gray-600">
-                          {actionText}数量
-                        </p>
-
-                        <div className="mb-3 grid grid-cols-6 gap-2">
-                          {quickList.map((num) => (
-                            <button
-                              key={num}
-                              type="button"
-                              onMouseDown={(e) => e.preventDefault()}
-                              onClick={() => {
-                                blurInput();
-                                setCloseQty(trade, num);
-                              }}
-                              className="rounded-xl border bg-white py-3 text-lg font-extrabold"
-                            >
-                              {num}
-                            </button>
-                          ))}
-
+                      <div className="mb-3 grid grid-cols-6 gap-2">
+                        {quickList.map((num) => (
                           <button
+                            key={num}
                             type="button"
                             onMouseDown={(e) => e.preventDefault()}
                             onClick={() => {
                               blurInput();
-                              setCloseQty(trade, remainingQty);
+                              setCloseQty(trade, num);
                             }}
-                            className="rounded-xl bg-gray-900 py-3 text-base font-extrabold text-white"
+                            className="rounded-xl border bg-white py-3 text-lg font-extrabold active:scale-95"
                           >
-                            全部
+                            {num}
                           </button>
-                        </div>
+                        ))}
 
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          value={getQtyValue(trade)}
-                          onChange={(e) => setCloseQty(trade, e.target.value)}
-                          className="h-16 w-full rounded-xl border bg-white text-center text-3xl font-extrabold"
-                          placeholder="股数"
-                        />
-
-                        <p className="mt-2 text-sm font-bold text-gray-500">
-                          剩余 {remainingQty} 股，快捷按钮不会超过剩余数量
-                        </p>
+                        <button
+                          type="button"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => {
+                            blurInput();
+                            setCloseQty(trade, remainingQty);
+                          }}
+                          className="rounded-xl bg-gray-900 py-3 text-base font-extrabold text-white active:scale-95"
+                        >
+                          全部
+                        </button>
                       </div>
-                    </div>
 
-                    <div className="mt-4 grid grid-cols-1 gap-3">
-                      <button
-                        disabled={savingId === trade.id}
-                        className={`w-full rounded-xl py-4 text-lg font-extrabold text-white ${
-                          savingId === trade.id ? "bg-gray-400" : "bg-green-600"
-                        }`}
-                      >
-                        {savingId === trade.id
-                          ? "正在保存..."
-                          : `保存${actionText}记录`}
-                      </button>
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        value={getQtyValue(trade)}
+                        onChange={(e) => setCloseQty(trade, e.target.value)}
+                        className="h-16 w-full rounded-xl border bg-white text-center text-3xl font-extrabold"
+                        placeholder="股数"
+                      />
 
-                      <button
-                        type="button"
-                        onClick={() => cancelTrade(trade.id)}
-                        className="w-full rounded-xl bg-red-600 py-4 text-lg font-extrabold text-white"
-                      >
-                        撤单
-                      </button>
+                      <p className="mt-2 text-sm font-bold text-gray-500">
+                        剩余 {remainingQty} 股，保存时会校验数量
+                      </p>
                     </div>
-                  </form>
-                </div>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-1 gap-3">
+                    <button
+                      disabled={savingId === trade.id}
+                      className={`w-full rounded-xl py-4 text-lg font-extrabold text-white ${
+                        savingId === trade.id ? "bg-gray-400" : "bg-green-600"
+                      }`}
+                    >
+                      {savingId === trade.id
+                        ? "正在保存..."
+                        : `保存${actionText}记录`}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => cancelTrade(trade.id)}
+                      className="w-full rounded-xl bg-red-600 py-4 text-lg font-extrabold text-white"
+                    >
+                      撤单
+                    </button>
+                  </div>
+                </form>
               )}
             </Card>
           );
