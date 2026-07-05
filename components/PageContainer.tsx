@@ -3,5 +3,9 @@ export default function PageContainer({
   }: {
     children: React.ReactNode;
   }) {
-    return <div className="p-4 max-w-5xl mx-auto">{children}</div>;
+    return (
+      <main className="mx-auto min-h-screen max-w-5xl px-4 py-5 text-gray-900">
+        {children}
+      </main>
+    );
   }
