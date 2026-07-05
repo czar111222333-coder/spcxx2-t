@@ -4,9 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import PageContainer from "../../components/PageContainer";
-import PageTitle from "@/components/PageTitle";
-import Card from "@/components/Card";
-import PrimaryButton from "@/components/PrimaryButton";
+import PageTitle from "../../components/PageTitle";
+import Card from "../../components/Card";
+import PrimaryButton from "../../components/PrimaryButton";
+import QtySelector from "../../components/QtySelector";
 
 function getToday() {
   return new Date().toISOString().slice(0, 10);
@@ -18,7 +19,6 @@ function getNowTime() {
 
 export default function NewTradePage() {
   const router = useRouter();
-  const quickQty = [1, 3, 5, 7, 10];
 
   const [direction, setDirection] = useState("买入开仓");
   const [qty, setQty] = useState(0);
@@ -27,16 +27,9 @@ export default function NewTradePage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
-  function addQty(num: number) {
-    setQty((old) => old + num);
-  }
-
-  function minusQty() {
-    setQty((old) => Math.max(0, old - 1));
-  }
-
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
     if (saving) return;
 
     const openPrice = Number(price);
@@ -61,6 +54,7 @@ export default function NewTradePage() {
     setMessage("");
 
     const form = new FormData(event.currentTarget);
+
     const open_date = form.get("open_date") as string;
     const open_time = form.get("open_time") as string;
 
@@ -91,7 +85,7 @@ export default function NewTradePage() {
 
   return (
     <PageContainer>
-      <PageTitle title="新建做T" subtitle="手动记录一笔新的做T开仓订单" />
+      <PageTitle title="新建做T" subtitle="记录一笔新的做T开仓订单" />
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <Card className="space-y-4">
@@ -155,55 +149,7 @@ export default function NewTradePage() {
             />
           </div>
 
-          <div className="bg-gray-100 rounded-2xl p-4">
-            <p className="text-gray-500 mb-3">快捷数量：点击会累加</p>
-
-            <div className="grid grid-cols-5 gap-2 mb-4">
-              {quickQty.map((num) => (
-                <button
-                  key={num}
-                  type="button"
-                  onClick={() => addQty(num)}
-                  className="bg-white border rounded-xl py-4 text-2xl font-bold active:scale-95 transition"
-                >
-                  {num}
-                </button>
-              ))}
-            </div>
-
-            <p className="text-gray-500 mb-2">当前开仓数量</p>
-
-            <div className="flex items-center justify-center gap-4">
-              <button
-                type="button"
-                onClick={minusQty}
-                className="w-16 h-16 bg-white rounded-xl text-3xl font-bold border active:scale-95 transition"
-              >
-                -
-              </button>
-
-              <div className="w-40 bg-white border rounded-xl p-4 text-center">
-                <span className="text-5xl font-bold">{qty}</span>
-                <span className="text-xl font-bold ml-1">股</span>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => addQty(1)}
-                className="w-16 h-16 bg-white rounded-xl text-3xl font-bold border active:scale-95 transition"
-              >
-                +
-              </button>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setQty(0)}
-              className="w-full bg-gray-700 text-white rounded-xl py-3 font-bold mt-4 active:scale-95 transition"
-            >
-              清空数量
-            </button>
-          </div>
+          <QtySelector qty={qty} setQty={setQty} />
 
           <textarea
             value={note}
