@@ -42,12 +42,55 @@ export default function CompletedPage() {
     loadTrades();
   }, []);
 
+  async function undoExecution(trade: any, execution: any) {
+    const first = window.confirm(
+      `确定撤回这条成交记录吗？\n\n价格：${execution.close_price}\n数量：${execution.qty} 股`
+    );
+
+    if (!first) return;
+
+    const second = window.confirm(
+      "再次确认：撤回后订单会恢复为进行中，需要重新录入正确成交。是否继续？"
+    );
+
+    if (!second) return;
+
+    const restoredQty =
+      Number(trade.remaining_qty || 0) + Number(execution.qty || 0);
+
+    const { error: deleteError } = await supabase
+      .from("executions")
+      .delete()
+      .eq("id", execution.id);
+
+    if (deleteError) {
+      setMessage("撤回失败：" + deleteError.message);
+      return;
+    }
+
+    const { error: updateError } = await supabase
+      .from("trades")
+      .update({
+        remaining_qty: restoredQty,
+        status: "进行中",
+      })
+      .eq("id", trade.id);
+
+    if (updateError) {
+      setMessage("恢复订单失败：" + updateError.message);
+      return;
+    }
+
+    setTrades((old) => old.filter((item) => item.id !== trade.id));
+    setMessage(`T${trade.id} 已撤回成交，订单已恢复为进行中`);
+  }
+
   return (
     <PageContainer>
       <PageTitle title="已完成记录" />
 
       {message && (
-        <div className="mb-4 rounded-xl border border-red-300 bg-red-50 p-4 text-base font-bold text-red-700">
+        <div className="mb-4 rounded-xl border border-blue-300 bg-blue-50 p-4 text-base font-bold text-blue-700">
           {message}
         </div>
       )}
@@ -159,10 +202,20 @@ export default function CompletedPage() {
                           {Number(item.close_price || 0).toFixed(2)}
                         </p>
 
-                        <p className="mt-1 text-sm font-bold text-gray-600">
-                          平仓手续费 $
-                          {Number(item.close_fee || 0).toFixed(2)}
-                        </p>
+                        <div className="mt-3 flex items-center justify-between gap-3">
+                          <p className="text-sm font-bold text-gray-600">
+                            平仓手续费 $
+                            {Number(item.close_fee || 0).toFixed(2)}
+                          </p>
+
+                          <button
+                            type="button"
+                            onClick={() => undoExecution(trade, item)}
+                            className="rounded-lg bg-orange-500 px-3 py-2 text-sm font-bold text-white active:scale-95"
+                          >
+                            ↩ 撤回
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
