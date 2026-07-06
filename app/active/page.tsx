@@ -91,10 +91,22 @@ export default function ActivePage() {
         ? (close_price - openPrice) * qty - totalFee
         : (openPrice - close_price) * qty - totalFee;
 
+    if (profit < 0) {
+      const warningOk = window.confirm(
+        `⚠️ 本次记录预计亏损\n\nT${trade.id}\n价格：${close_price}\n数量：${qty} 股\n预计亏损：$${Math.abs(
+          profit
+        ).toFixed(2)}\n本次手续费：$${totalFee.toFixed(
+          2
+        )}\n\n确认继续保存吗？`
+      );
+
+      if (!warningOk) return;
+    }
+
     const ok = window.confirm(
-      `确认${actionText}完成？\n\nT${trade.id}\n价格：${close_price}\n数量：${qty} 股\n本次手续费：$${totalFee.toFixed(
-        2
-      )}`
+      `确认${actionText}完成？\n\nT${trade.id}\n价格：${close_price}\n数量：${qty} 股\n预计利润：${
+        profit >= 0 ? "+" : "-"
+      }$${Math.abs(profit).toFixed(2)}\n本次手续费：$${totalFee.toFixed(2)}`
     );
 
     if (!ok) return;
